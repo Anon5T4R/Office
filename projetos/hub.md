@@ -112,6 +112,13 @@ Fase 3: o Hub se trata como mais um item do catálogo (checa a própria release,
 - Windows primeiro; Linux na fase 4.
 - Sem telemetria; as únicas chamadas de rede são GitHub (releases + catálogo), disparadas por ação do usuário ou abertura do Hub.
 
+## Backlog (pedidos do João em 2026-07-06, após testar a v0.1.0)
+
+- ~~**Ícones reais nos cards**~~ FEITO (v0.2.0): `iconUrl` do catálogo com fallback pra letra.
+- ~~**Auto-update do Hub, só com consentimento**~~ FEITO (v0.2.0): banner "Nova versão do Hub disponível" + botão; nunca atualiza sozinho.
+- ~~**Aba de arquivos: recentes/favoritos**~~ FEITO (v0.2.0): dispatcher loga em `recents.json` (config dir; cap 40 não fixados); aba "Recentes" com Fixados (★) + Recentes, abre pelo app da rota atual, fixar/remover/limpar. Aba "Arquivos" renomeada pra "Associações". Nota: só entra na lista o que passa pelo dispatcher (duplo-clique via associação) — arquivo aberto de dentro do app não aparece. Sem file-manager (organizar/mover fica pro Explorer/Nautilus).
+- **Pasta de vaults do OpenObsidian** — a fazer, **investigado em 2026-07-06**: o OpenObsidian NÃO lê `process.argv` (vault só abre por diálogo, Ctrl+Shift+O; o último vault fica em `app-settings.json` no userData e reabre sozinho). **Pré-requisito: adicionar suporte a CLI no OpenObsidian** (~15 linhas em `src/main/index.ts`: argv[1] é pasta → abrir como vault + tratar `second-instance`). Depois disso o Hub lista as subpastas da pasta de vaults configurada e lança `OpenObsidian <caminho>`. Evitar a gambiarra de escrever `lastVault` no app-settings.json por fora (frágil, só com o app fechado).
+
 ## Pendências fora do Hub (arrumar nos apps, sem pressa)
 
 - TaylorMind: nome dos assets desalinhado com a tag (0.1.0 × v0.1.1).
