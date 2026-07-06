@@ -2,6 +2,18 @@
 
 > Plano de 2026-07-06. Complementa o §5 do [projetos.md](projetos.md). **Decisão: o Hub é dirigido por catálogo** — adicionar app novo = 1 entrada num JSON, zero código, zero rebuild. Por isso ele pode ser feito AGORA, antes de LocalData/LocalPDF existirem: eles entram no catálogo no dia em que tiverem release.
 
+## ESTADO (2026-07-06): Fases 1 e 2 IMPLEMENTADAS em `hub/` (v0.1.0)
+
+Repo: https://github.com/Anon5T4R/TaylorHub (público, MIT). Build TS + `cargo check` + testes verdes; UI verificada no preview do Vite. **Falta testar clique-a-clique no app Tauri de verdade** (instalar um app real, aplicar associações, duplo-clique num arquivo) — o assistente não consegue manter janela GUI viva.
+
+Diferenças do plano original (decididas na implementação):
+- **Windows E Linux desde o dia 1** (pedido do João) — install AppImage → `~/Applications` + `.desktop`; associações via mime/xdg. A fase "Linux depois" caiu.
+- **macOS: fica de fora por enquanto** — NENHUM app da suíte tem build de Mac hoje (verificado nas releases: todos só têm `.exe` + `.AppImage`/`.deb`). ⚠️ **PENDÊNCIA ANOTADA: gerar builds macOS dos apps (e do Hub) — resolver em sessão futura, só quando o João pedir explicitamente.**
+- Detecção de instalado no Windows: **varre TODOS os itens de Uninstall casando por DisplayName** (Tauri NSIS e electron-builder usam chaves diferentes; casar pelo nome é robusto pros dois).
+- Catálogo por ora **embutido** em `src/catalog.ts` (fase 3 = mover pra `catalog.json` remoto com cache).
+- Porta dev do Vite: **1425** (writer/sheets/slides usam 1420).
+- TaylorMind: assets da release v0.1.1 se chamam `0.1.0` → glob `TaylorMind.Setup.*.exe` resolve, mas arrumar na próxima release do TaylorMind.
+
 ## O que o Hub é (e não é)
 
 **É:** um app pequeno (Tauri 2 + React, mesmo stack da suíte, pasta `hub/` no Office) com três funções:
