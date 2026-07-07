@@ -125,15 +125,20 @@ Suíte de aplicativos desktop **100% offline**, com **IA local** (modelos GGUF v
 
 ## 4. Apps planejados (ainda não iniciados)
 
-### 4.1 LocalData / "Taylor Base" — dados estruturados (prioridade 1)
+### 4.1 LocalData / "Taylor Base" — dados estruturados — **IMPLEMENTADO (2026-07-07, `data/` v0.1.0)**
 
 Airtable/Access local. **Por que não é o Sheets:** planilha = células livres; banco = registro tipado com relações e múltiplas visões — forçar isso no jspreadsheet luta contra a natureza da planilha. Sheets = Excel (cálculo); este = Access/Airtable (dados).
 
-- **Armazenamento:** **SQLite** (tauri-plugin-sql ou rusqlite), um arquivo `.db` por base — portável, sem servidor.
-- **Schema tipado por coluna:** texto, número, data, booleano, select/multiselect, **relação (FK)**, anexo, fórmula simples. Migrations versionadas no Rust.
-- **Múltiplas visões** da mesma tabela: grade (reusa padrões do Sheets), **kanban** (agrupa por select), **calendário** (campo de data), **formulário**, galeria. Filtros/ordenação/agrupamento persistidos como metadados no `.db`.
-- **IA (o maior diferencial da suíte):** "cria tabela de clientes com os campos certos" → JSON de schema; "categoriza estes registros" → JSON de operações (`insert`/`update`/`createColumn`/`setFilter`) **validado contra o schema** e aplicado em transação. **Nunca executar SQL cru do modelo** — sempre JSON validado → queries parametrizadas. Porta sugerida: 8101.
-- **Fases:** (1) SQLite + tabela única + grade tipada; (2) tipos ricos; (3) visões; (4) filtros/grupos; (5) IA schema+registros; (6) import CSV/XLSX; (7) relações+lookup.
+**Estado (v0.1.0):** repo https://github.com/Anon5T4R/LocalData (MIT, branch main; gitlink `data/`). As fases 1–7 do plano original saíram juntas na v0.1.0:
+
+- **Armazenamento:** **rusqlite (bundled)**, um arquivo **`.tbase`** por base (associação registrada) — é um SQLite legítimo, abre em qualquer ferramenta; também abre `.db`/`.sqlite` alheios (só adiciona as tabelas de metadados). Schema rico em `_taylor_tables/_taylor_fields/_taylor_views/_taylor_blobs` + tabela SQL real `t_<id>` por tabela, coluna `c_<id>` por campo (**IDs estáveis: renomear nunca gera DDL**). `schema_version` em `_taylor_meta` pronto pra migrations.
+- **Tipos de campo:** texto, texto longo, número, checkbox, data (ISO, ordena como texto), select, multi-select, **relação** (array de ids em JSON — N:N sem join table), **anexo** (blob dentro do `.tbase` + GC ao fechar) e **fórmula** (avaliada no front: `{Campo}`, aritmética, IF/AND/OR/CONCAT/UPPER/ROUND/TODAY/DAYS…). Mudança de tipo converte valores (texto→select auto-cria as opções).
+- **Views persistidas** (config JSON na base): grade virtualizada com edição inline/resize/ocultar colunas, kanban (drag entre colunas de select), calendário mensal, galeria (capa = anexo), formulário. Filtros/ordenação/busca **sempre em SQL parametrizado** montado no Rust.
+- **Import CSV/XLSX** (SheetJS no webview, Rust só move bytes) com inferência de tipos → tabela nova; **export XLSX/CSV**.
+- **IA (porta 8101–8121):** ops `createTable/createField/insert/update/setFilter` em JSON, **validadas contra o schema em TS** → comandos parametrizados; select por NOME com auto-criação de opção; **nunca SQL cru** (regra mantida). Sidecar llama.cpp padrão da suíte.
+- Testes: 6 unit Rust (validação/filtros/conversão) + 18 vitest (fórmula/inferência). CI check+testes (ubuntu) + release NSIS/AppImage.
+
+**Pendências anotadas:** agrupamento na grade; undo/lixeira de registros; reordenar campos/tabelas por drag; lookup/rollup em relações (hoje só chips); teste GUI completo (grade/kanban/IA) na máquina do João; entrada no catálogo do Hub quando sair a 1ª release.
 
 ### 4.2 LocalPDF / "Taylor PDF" — editor de PDF (prioridade 2)
 
@@ -234,7 +239,7 @@ O Writer está **AGPL-3.0-or-later**, o resto (sheets/slides/code/TaylorMind) é
 ## 7. Ordem de execução (resumo — atualizada 2026-07-06)
 
 1. **Hub / TaylorHub** (§5, [hub.md](hub.md)) — antecipado: por ser catálogo-driven, não depende dos apps futuros; eles entram depois com 1 entrada JSON.
-2. **LocalData** (§4.1) → **LocalPDF** (§4.2) → avaliar **LocalDraw** (§4.3). Pendências dos apps atuais (§2) em paralelo, são refinos.
+2. ~~**LocalData** (§4.1)~~ **FEITO (2026-07-07, v0.1.0)** → **LocalPDF** (§4.2) → avaliar **LocalDraw** (§4.3). Pendências dos apps atuais (§2) em paralelo, são refinos.
 3. **Runtime de IA compartilhado** (§6.1) — pós-Hub. RAG comum (§6.2) pode nascer antes, dentro do LocalPDF.
 4. **Taylor Chat P2P** (§4.4) — futuro, sem data.
 
