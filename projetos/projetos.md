@@ -129,7 +129,7 @@ Suíte de aplicativos desktop **100% offline**, com **IA local** (modelos GGUF v
 
 Airtable/Access local. **Por que não é o Sheets:** planilha = células livres; banco = registro tipado com relações e múltiplas visões — forçar isso no jspreadsheet luta contra a natureza da planilha. Sheets = Excel (cálculo); este = Access/Airtable (dados).
 
-**Estado (v0.1.0):** repo https://github.com/Anon5T4R/LocalData (MIT, branch main; gitlink `data/`). As fases 1–7 do plano original saíram juntas na v0.1.0:
+**Estado (v0.2.0, releases v0.1.0 e v0.2.0 publicadas; no catálogo do Hub desde o Hub v0.3.0):** repo https://github.com/Anon5T4R/LocalData (MIT, branch main; gitlink `data/`). As fases 1–7 do plano original saíram juntas na v0.1.0; a v0.2.0 (mesmo dia) poliu: comandos Tauri async (fora da main thread), paginação de registros (500/página em background), undo/redo de registros com restauração de IDs originais, navegação por teclado na grade, drag pra reordenar colunas/tabelas e menu de contexto de linha.
 
 - **Armazenamento:** **rusqlite (bundled)**, um arquivo **`.tbase`** por base (associação registrada) — é um SQLite legítimo, abre em qualquer ferramenta; também abre `.db`/`.sqlite` alheios (só adiciona as tabelas de metadados). Schema rico em `_taylor_tables/_taylor_fields/_taylor_views/_taylor_blobs` + tabela SQL real `t_<id>` por tabela, coluna `c_<id>` por campo (**IDs estáveis: renomear nunca gera DDL**). `schema_version` em `_taylor_meta` pronto pra migrations.
 - **Tipos de campo:** texto, texto longo, número, checkbox, data (ISO, ordena como texto), select, multi-select, **relação** (array de ids em JSON — N:N sem join table), **anexo** (blob dentro do `.tbase` + GC ao fechar) e **fórmula** (avaliada no front: `{Campo}`, aritmética, IF/AND/OR/CONCAT/UPPER/ROUND/TODAY/DAYS…). Mudança de tipo converte valores (texto→select auto-cria as opções).
@@ -138,7 +138,7 @@ Airtable/Access local. **Por que não é o Sheets:** planilha = células livres;
 - **IA (porta 8101–8121):** ops `createTable/createField/insert/update/setFilter` em JSON, **validadas contra o schema em TS** → comandos parametrizados; select por NOME com auto-criação de opção; **nunca SQL cru** (regra mantida). Sidecar llama.cpp padrão da suíte.
 - Testes: 6 unit Rust (validação/filtros/conversão) + 18 vitest (fórmula/inferência). CI check+testes (ubuntu) + release NSIS/AppImage.
 
-**Pendências anotadas:** agrupamento na grade; undo/lixeira de registros; reordenar campos/tabelas por drag; lookup/rollup em relações (hoje só chips); teste GUI completo (grade/kanban/IA) na máquina do João; entrada no catálogo do Hub quando sair a 1ª release.
+**Pendências anotadas:** agrupamento na grade; lookup/rollup em relações (hoje só chips); copiar/colar células e seleção retangular; teste GUI completo (grade/kanban/IA) na máquina do João.
 
 ### 4.2 LocalPDF / "Taylor PDF" — editor de PDF (prioridade 2)
 
