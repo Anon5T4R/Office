@@ -140,7 +140,17 @@ Airtable/Access local. **Por que não é o Sheets:** planilha = células livres;
 
 **v0.4.0 (2026-07-07, tag + release):** **extensões — tipos de campo plugáveis**: `.js` na pasta de extensões (config dir) roda na inicialização com a API `localdata.registerFieldType({id,name,icon,description,placeholder,multiline,parse,format,color})`; sem sandbox de propósito (código local do próprio usuário/dev, sem loja). No banco é sempre tipo `custom` = TEXT com coluna real — a camada SQL não depende de código de terceiro; remover extensão não perde dados. Menu 🧩 no TopBar (tipos carregados, erros, abrir pasta via opener escopo $APPCONFIG, recarregar a quente); exemplo `exemplo-cpf.js` auto-instalado na 1ª execução. E **backup automático ao abrir**: cópia pra `<config>/backups` antes de abrir, retenção POR BASE configurável na tela inicial (desligado/10/50/N, default 10, teto 500; hash do caminho distingue bases homônimas), melhor esforço (nunca bloqueia a abertura), botão abre a pasta.
 
-**Pendências anotadas:** teste GUI completo (grade/kanban/IA/copiar-colar/extensões) na máquina do João; grupos com drag entre eles; lookup aninhado (lookup de lookup) fora de escopo; escalar pra centenas de milhares de registros fica pra depois (decisão do João 2026-07-07).
+**v0.5.0 (2026-07-07, tag + release) — "pronto pra empresa média" (itens 1–9 pedidos pelo João):**
+- **Modo servidor multiusuário (LAN):** `src-tauri/src/server.rs` (tiny_http, 4 threads) hospeda a base ABERTA na GUI; todo acesso serializa no mesmo Mutex do SQLite (zero escrita concorrente no arquivo — `Db` virou `Arc<Mutex<>>` clonável). Usuários/senhas na própria base (`_taylor_users`, argon2) + papéis leitor<editor<admin e override por tabela (`_taylor_perms`). O servidor injeta o `actor` em cada mutação (auditoria confiável). Front: transporte `call` em backend.ts roteia `invoke` (local) vs `fetch` (remoto) sem duplicar wrappers (`remote.ts`); StartScreen conecta a um host; `ServerPanel` administra usuários/servir; polling `changes_since` (~2s) reflete edições dos colegas. **Headless `--serve` ficou pra 0.6** (exige refatorar comandos pra `&Db`; o servidor hospedado pela GUI já entrega o multiusuário).
+- **Auditoria** (`_taylor_audit`): trilha append-only quem/quando/ação/antes→depois na MESMA transação de cada mudança (lote >200 vira resumo). UI: histórico geral (TopBar 🕘) e por registro (no modal).
+- **Integridade + validação** (no Rust, dentro da transação): relação `onDelete` restrict/unlink (sem ids órfãos); constraints por campo único/obrigatório/regex/min-máx.
+- **Import com upsert** (`upsertImport` + `ImportModal`): reimporta planilha PARA a tabela ativa casando por campo-chave.
+- **Escala:** `records_aggregate` faz COUNT/SUM/AVG/MIN/MAX no SQL (rodapé independe das linhas carregadas); PAGE_SIZE 1000; teste de 100k (insert 264ms/página 36ms/agregação 22ms).
+- **Relatório imprimível** (`ReportModal` + `@media print`) → PDF pela impressora do SO, zero deps.
+- **Automações** (`automations.ts` + `_taylor_automations`): "ao criar / campo vira valor" → notificar (plugin-notification, `{Campo}` interpolado) ou definir campo. Um nível, sem cascata; motor no store pós-mutação.
+- Deps novas: `tiny_http`, `argon2`, `regex`, `tauri-plugin-notification`. Testes: 14 Rust + 26 vitest verdes.
+
+**Pendências anotadas:** teste GUI completo (grade/kanban/IA/multiusuário 2 máquinas/automações) na máquina do João; headless `--serve` (0.6); grupos com drag entre eles; lookup aninhado fora de escopo. **Empresa média: 1–9 ✅** — o que sobra é polimento e o headless.
 
 ### 4.2 LocalPDF / "Taylor PDF" — editor de PDF (prioridade 2)
 
@@ -156,11 +166,11 @@ Ir além da leitura: anotar, preencher formulários, mesclar/dividir/reordenar, 
 
 Visio/draw.io local. **Custo-benefício alto:** o canvas do Slides já entrega ~70% (formas SVG, snapping, alinhar/distribuir, grupos, camadas, export PNG/PDF). Novidade principal = **conectores entre formas** (linhas que seguem o elemento ao mover) + formas de fluxograma + export SVG. Decidir depois de LocalData/LocalPDF; se sair, é porte do slides/.
 
-### 4.4 Taylor Chat — mensageria P2P (futuro, pós-suíte)
+### 4.4 Taylor Chat — mensageria P2P (futuro, pós-suíte) — **PLANO DETALHADO em [plano.md](plano.md) (2026-07-07)**
 
-Substitui a ideia de e-mail (descartada — não faz sentido pro que a suíte quer). **WhatsApp/e-mail P2P sem servidor**: mensagens, **arquivos comprimidos** e mídia direto entre pares.
+Substitui a ideia de e-mail (descartada — não faz sentido pro que a suíte quer). **WhatsApp/e-mail P2P sem servidor**: mensagens, **arquivos comprimidos** e mídia direto entre pares. Nome **TaylorChat** (foge do padrão `Local*` de propósito: mensageiro não é "local" — decisão do João 2026-07-07); pasta `chat/`, repo `Anon5T4R/TaylorChat`, MIT. **Scaffold + Fases 1–2 já implementadas** (`chat/` v0.1.0-dev, 2026-07-07): identidade ed25519 no keyring, SQLite, pareamento por convite/QR, shell de UI; Fase 3 (rede iroh) com front pronto e `net.rs` a fechar em build na máquina.
 
-Esboço inicial (nada decidido em código):
+As perguntas em aberto abaixo foram **fechadas no [plano.md](plano.md)**: transporte **iroh** (traz blobs resumíveis + gossip de graça), cripto **QUIC/TLS + double ratchet `vodozemac`**, relays públicos do n0 OK (NAT-traversal, não é infra nossa), histórico **rusqlite cifrado**, IA na **porta 8103**, MVP 1-device (multi-device e store-and-forward são fases futuras). Esboço original preservado:
 - **Transporte P2P:** avaliar **iroh** (Rust, QUIC, hole-punching, direto ao ponto) vs **libp2p** (mais ecossistema, mais complexo). Ambos Rust/OSS — casam com Tauri.
 - **Criptografia ponta a ponta** obrigatória (o que a lib der; ideal double ratchet ou Noise).
 - **Descoberta/pareamento:** QR code / código de convite (troca de chaves fora de banda) — sem cadastro, sem número de telefone.
