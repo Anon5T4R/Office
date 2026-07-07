@@ -138,7 +138,9 @@ Airtable/Access local. **Por que não é o Sheets:** planilha = células livres;
 - **IA (porta 8101–8121):** ops `createTable/createField/insert/update/setFilter` em JSON, **validadas contra o schema em TS** → comandos parametrizados; select por NOME com auto-criação de opção; **nunca SQL cru** (regra mantida). Sidecar llama.cpp padrão da suíte.
 - Testes: 8 unit Rust (validação/filtros/conversão/duplicação) + 26 vitest (fórmula/inferência/clipboard). CI check+testes (ubuntu) + release NSIS/AppImage.
 
-**Pendências anotadas:** tag/release da v0.3.0 (quando o João pedir); teste GUI completo (grade/kanban/IA/copiar-colar) na máquina do João; grupos com drag entre eles; lookup aninhado (lookup de lookup) fora de escopo.
+**v0.4.0 (2026-07-07, tag + release):** **extensões — tipos de campo plugáveis**: `.js` na pasta de extensões (config dir) roda na inicialização com a API `localdata.registerFieldType({id,name,icon,description,placeholder,multiline,parse,format,color})`; sem sandbox de propósito (código local do próprio usuário/dev, sem loja). No banco é sempre tipo `custom` = TEXT com coluna real — a camada SQL não depende de código de terceiro; remover extensão não perde dados. Menu 🧩 no TopBar (tipos carregados, erros, abrir pasta via opener escopo $APPCONFIG, recarregar a quente); exemplo `exemplo-cpf.js` auto-instalado na 1ª execução. E **backup automático ao abrir**: cópia pra `<config>/backups` antes de abrir, retenção POR BASE configurável na tela inicial (desligado/10/50/N, default 10, teto 500; hash do caminho distingue bases homônimas), melhor esforço (nunca bloqueia a abertura), botão abre a pasta.
+
+**Pendências anotadas:** teste GUI completo (grade/kanban/IA/copiar-colar/extensões) na máquina do João; grupos com drag entre eles; lookup aninhado (lookup de lookup) fora de escopo; escalar pra centenas de milhares de registros fica pra depois (decisão do João 2026-07-07).
 
 ### 4.2 LocalPDF / "Taylor PDF" — editor de PDF (prioridade 2)
 
