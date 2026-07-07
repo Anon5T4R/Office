@@ -8,7 +8,8 @@ Repo: https://github.com/Anon5T4R/TaylorHub (público, MIT). Build TS + `cargo c
 
 Diferenças do plano original (decididas na implementação):
 - **Windows E Linux desde o dia 1** (pedido do João) — install AppImage → `~/Applications` + `.desktop`; associações via mime/xdg. A fase "Linux depois" caiu.
-- **macOS: fica de fora por enquanto** — NENHUM app da suíte tem build de Mac hoje (verificado nas releases: todos só têm `.exe` + `.AppImage`/`.deb`). ⚠️ **PENDÊNCIA ANOTADA: gerar builds macOS dos apps (e do Hub) — resolver em sessão futura, só quando o João pedir explicitamente.**
+- **macOS: fica de fora por enquanto** — quase nenhum app da suíte tem build de Mac (verificado nas releases: só `.exe` + `.AppImage`/`.deb`). Exceção descoberta em 2026-07-06: **TaylorAI Studio já publica `.dmg` (aarch64)**. ⚠️ **PENDÊNCIA ANOTADA: gerar builds macOS dos demais apps (e do Hub) — resolver em sessão futura, só quando o João pedir explicitamente.**
+- **Catálogo ganhou o 7º app (2026-07-06): TaylorAI Studio** (`Anon5T4R/taylorai-studio`, Tauri, "LM Studio" local, exe `TaylorAI Studio.exe`, sem extensões associadas) — 1 entrada JSON, comprovando a extensibilidade prometida.
 - Detecção de instalado no Windows: **varre TODOS os itens de Uninstall casando por DisplayName** (Tauri NSIS e electron-builder usam chaves diferentes; casar pelo nome é robusto pros dois).
 - Catálogo por ora **embutido** em `src/catalog.ts` (fase 3 = mover pra `catalog.json` remoto com cache).
 - Porta dev do Vite: **1425** (writer/sheets/slides usam 1420).
