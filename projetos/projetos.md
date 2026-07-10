@@ -39,8 +39,9 @@ Suíte de aplicativos desktop **100% offline**, com **IA local** (modelos GGUF v
 | Code | 8090–8099 (dinâmica) |
 | Sheets | 8099–8148 (dinâmica) |
 | Slides | 8100–8120 (preferência 8100) |
-| LocalData (planejado) | sugestão 8101 |
-| LocalPDF (planejado) | sugestão 8102 |
+| LocalData | 8101–8121 (preferência 8101) |
+| LocalPDF | 8102–8122 (preferência 8102) |
+| TaylorChat | 8103–8123 (preferência 8103) |
 
 ---
 
@@ -152,23 +153,30 @@ Airtable/Access local. **Por que não é o Sheets:** planilha = células livres;
 
 **Pendências anotadas:** teste GUI completo (grade/kanban/IA/multiusuário 2 máquinas/automações) na máquina do João; headless `--serve` (0.6); grupos com drag entre eles; lookup aninhado fora de escopo. **Empresa média: 1–9 ✅** — o que sobra é polimento e o headless.
 
-### 4.2 LocalPDF / "Taylor PDF" — editor de PDF (prioridade 2)
+### 4.2 LocalPDF / "Taylor PDF" — editor de PDF — **PUBLICADO (2026-07-10, v0.2.0; repo + releases + Hub v0.3.8)**
 
 Ir além da leitura: anotar, preencher formulários, mesclar/dividir/reordenar, assinar, OCR — e **editar texto existente com re-fluxo** (santo graal, fase final).
 
-- **Stack:** **pdf.js** (render, Apache/Mozilla) + **pdf-lib** (MIT: mesclar/dividir/rotacionar/AcroForms/carimbar — cobre ~80% sem motor de layout) + **Tesseract** sidecar p/ OCR (opcional, tardio).
-- **Anotações:** camada própria sobre o canvas do pdf.js, persistida e "queimada" via pdf-lib (ou mantida como anotação PDF real).
-- **Edição com re-fluxo (fase final):** pdf.js entrega runs de texto com posição/fonte → agrupar glifos em linhas/blocos por heurística → ao editar, apagar região e redesenhar com pdf-lib (embutir fonte via fontkit; fonte não-embutida = ponto fraco, cair pra substituta). Começar limitado a parágrafo simples mono-fonte.
-- **IA:** "converse com o PDF" (Q&A) → **primeiro caso real de RAG local** da suíte (ver §6); resumir (map-reduce do Writer); extrair tabelas/campos; preencher formulário por instrução. Porta sugerida: 8102.
-- **Fases:** (1) visualizar + mesclar/dividir/reordenar; (2) anotações; (3) formulários + sobrepor texto; (4) OCR; (5) IA resumo+RAG; (6) assinatura; (7) edição com re-fluxo.
+**Estado (2026-07-10): v0.1.0 e v0.2.0 no repo https://github.com/Anon5T4R/LocalPDF (MIT, releases Windows NSIS + AppImage via Actions); no catálogo do TaylorHub v0.3.8 (10º app, associação `.pdf`).** Tudo implementado e verificado no navegador (vite dev + PDF sintético + OCR real lendo páginas renderizadas):
+- **Viewer** pdf.js: zoom (presets + Ctrl+roda + ajustar), miniaturas com drag pra reordenar, render preguiçoso (IntersectionObserver), "ir para página", **camada de texto selecionável** (copiar + botão flutuante que vira a seleção em realces precisos) e **busca Ctrl+F** (varre texto posicionado + palavras do OCR, navega e pisca o trecho).
+- **Páginas** via pdf-lib: mesclar, extrair, reordenar, rotacionar, excluir, inserir em branco; undo/redo por snapshot de bytes (cap 12).
+- **Anotações** queimadas no salvar: realce (multiply), texto, desenho, **imagem/carimbo** e **assinatura desenhada** (modal, recorte no traço, reuso via localStorage, arrastar/redimensionar); conversão viewport↔PDF cobre as 4 rotações (`coords.ts`, unit-testada).
+- **Edição de texto existente (beta)**: clique numa linha (agrupamento de itens do pdf.js por baseline), reescreve; tarja branca + redesenho. Re-fluxo de parágrafo continua sendo a fase final.
+- **AcroForms**: listar/preencher (+`updateFieldAppearances`).
+- **OCR offline** (tesseract.js 7, por/eng tessdata_fast, ~26MB em `public/tesseract` via `scripts/fetch-tessdata` + CI): reconhece páginas escaneadas, alimenta busca/IA e **grava texto invisível** (opacity 0) — PDF vira pesquisável em qualquer leitor. Testado de ponta a ponta (leu as páginas de teste com precisão perfeita).
+- **IA local porta 8102–8122**: resumo map-reduce + Q&A com recuperação lexical (`chunks.ts`); RAG com embeddings fica pro módulo comum §6.2.
+- **Front**: tema claro/escuro/sistema (tokens CSS + data-theme), topbar em 2 linhas, StartScreen com chips de features. 39 testes vitest; front build + cargo check verdes.
+- **Caveats:** `copyPages` (reordenar/extrair/mesclar) não reconstrói o AcroForm; texto queimado = Helvetica WinAnsi (pt-BR OK); salvar achata as anotações; edição de linha cobre visualmente (o texto original continua extraível por baixo da tarja).
+- **Lições novas de suíte (pagas aqui):** (1) selector zustand devolvendo `[]`/`{}` novo a cada render = loop infinito "getSnapshot should be cached" — usar constante estável; (2) OCR embarcado: copiar só as variantes *-lstm* do tesseract.js-core (as "full" dobram os ~26MB).
+- **Falta:** teste GUI real (`tauri dev`) e IA com `.gguf` na máquina do João; re-fluxo de parágrafo (santo graal); assinatura criptográfica (a atual é visual); OCR em mais idiomas.
 
 ### 4.3 LocalDraw — diagramas (a avaliar)
 
 Visio/draw.io local. **Custo-benefício alto:** o canvas do Slides já entrega ~70% (formas SVG, snapping, alinhar/distribuir, grupos, camadas, export PNG/PDF). Novidade principal = **conectores entre formas** (linhas que seguem o elemento ao mover) + formas de fluxograma + export SVG. Decidir depois de LocalData/LocalPDF; se sair, é porte do slides/.
 
-### 4.4 Taylor Chat — mensageria P2P (futuro, pós-suíte) — **PLANO DETALHADO em [plano.md](plano.md) (2026-07-07)**
+### 4.4 Taylor Chat — mensageria P2P — **PUBLICADO (v0.1.11)** · design em [plano.md](plano.md), roadmap em [taylorchat-roadmap.md](taylorchat-roadmap.md)
 
-Substitui a ideia de e-mail (descartada — não faz sentido pro que a suíte quer). **WhatsApp/e-mail P2P sem servidor**: mensagens, **arquivos comprimidos** e mídia direto entre pares. Nome **TaylorChat** (foge do padrão `Local*` de propósito: mensageiro não é "local" — decisão do João 2026-07-07); pasta `chat/`, repo `Anon5T4R/TaylorChat`, MIT. **Scaffold + Fases 1–2 já implementadas** (`chat/` v0.1.0-dev, 2026-07-07): identidade ed25519 no keyring, SQLite, pareamento por convite/QR, shell de UI; Fase 3 (rede iroh) com front pronto e `net.rs` a fechar em build na máquina.
+Substitui a ideia de e-mail (descartada). **Mensageiro P2P sem servidor**: mensagens, arquivos comprimidos/retomáveis e mídia direto entre pares, E2E, sem cadastro/telefone. Nome **TaylorChat** (foge do padrão `Local*` de propósito — decisão do João 2026-07-07); pasta `chat/`, repo `Anon5T4R/TaylorChat`, MIT; no catálogo do TaylorHub. **Todas as fases do MVP feitas + evolução até v0.1.11** (releases Windows/Linux com `--features p2p`): identidade ed25519 no keyring, SQLite cifrado em repouso, pareamento por convite/QR, double ratchet vodozemac (X3DH + forward secrecy), rede iroh (**mDNS LAN + n0**), anexos retomáveis, stickers, multichat, auditoria, palavra-chave anti-MITM, IA local (só propõe), i18n pt/es/en, bandeja, **lista de contatos**, **canal quente com heartbeat ping/pong + presença em tempo real**. **Revisão vs WhatsApp Desktop (2026-07-09): 62/100** de prontidão pra uso diário — o que falta (com destaque pro furo P0 de **notificações de desktop**) está na checklist do [taylorchat-roadmap.md](taylorchat-roadmap.md). Pendência operacional: **teste ponta a ponta com 2 PCs**.
 
 As perguntas em aberto abaixo foram **fechadas no [plano.md](plano.md)**: transporte **iroh** (traz blobs resumíveis + gossip de graça), cripto **QUIC/TLS + double ratchet `vodozemac`**, relays públicos do n0 OK (NAT-traversal, não é infra nossa), histórico **rusqlite cifrado**, IA na **porta 8103**, MVP 1-device (multi-device e store-and-forward são fases futuras). Esboço original preservado:
 - **Transporte P2P:** avaliar **iroh** (Rust, QUIC, hole-punching, direto ao ponto) vs **libp2p** (mais ecossistema, mais complexo). Ambos Rust/OSS — casam com Tauri.
@@ -251,7 +259,7 @@ O Writer está **AGPL-3.0-or-later**, o resto (sheets/slides/code/TaylorMind) é
 ## 7. Ordem de execução (resumo — atualizada 2026-07-06)
 
 1. **Hub / TaylorHub** (§5, [hub.md](hub.md)) — antecipado: por ser catálogo-driven, não depende dos apps futuros; eles entram depois com 1 entrada JSON.
-2. ~~**LocalData** (§4.1)~~ **FEITO (2026-07-07, v0.1.0)** → **LocalPDF** (§4.2) → avaliar **LocalDraw** (§4.3). Pendências dos apps atuais (§2) em paralelo, são refinos.
+2. ~~**LocalData** (§4.1)~~ **FEITO (2026-07-07, v0.1.0)** → ~~**LocalPDF** (§4.2)~~ **FEITO (2026-07-10, v0.1.0 — falta release/Hub)** → avaliar **LocalDraw** (§4.3). Pendências dos apps atuais (§2) em paralelo, são refinos.
 3. **Runtime de IA compartilhado** (§6.1) — pós-Hub. RAG comum (§6.2) pode nascer antes, dentro do LocalPDF.
 4. **Taylor Chat P2P** (§4.4) — futuro, sem data.
 
