@@ -30,6 +30,7 @@ Suíte de aplicativos desktop **100% offline**, com **IA local** (modelos GGUF v
 - Regra "**zip sempre no webview**" (JSZip/PptxGenJS), Rust só move bytes (`read/write_file_base64`) — evita dor com AppImage e mantém a lógica em TS.
 - `tauri.conf.json` com glob de resources não pode ficar vazio — manter `placeholder.txt` versionado em `binaries/llama/`.
 - Checar exit code de `cargo | tail` mascara falha do cargo — redirecionar pra arquivo e checar `$?`.
+- **`onCloseRequested` (Tauri v2) transfere o fechamento pro JS** (o wrapper chama `window.destroy()`), e `core:window:default` só tem getters — sem `core:window:allow-destroy` na capability, **o X da janela para de funcionar** (e `setTitle` exige `allow-set-title`). Lição paga no LocalPDF v0.3.2.
 
 **Mapa de portas da IA (estado atual — ver §6 sobre a colisão):**
 
