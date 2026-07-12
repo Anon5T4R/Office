@@ -192,15 +192,16 @@ As perguntas em aberto abaixo foram **fechadas no [plano.md](plano.md)**: transp
 - **Histórico:** local em SQLite (cifrado em repouso, se viável).
 - **Sem data.** Registrado aqui só pra não perder a intenção.
 
-### 4.5 LocalZIM — leitor de bibliotecas ZIM / clone do Kiwix — **IMPLEMENTADO (2026-07-12, v0.1.0 local)**
+### 4.5 LocalZIM — leitor de bibliotecas ZIM / clone do Kiwix — **PUBLICADO (2026-07-12, v0.2.0; Hub v0.4.0)**
 
-Lê arquivos `.zim` (Wikipédia offline, Stack Overflow, Gutenberg — library.kiwix.org). Pasta `LocalZIM/`, porta dev 1440, identifier `com.localzim.app`, associação `.zim`, MIT.
+Lê arquivos `.zim` (Wikipédia offline, Stack Overflow, Gutenberg — library.kiwix.org). Repo https://github.com/Anon5T4R/LocalZIM (MIT, branch main; README credita o Kiwix e aponta o zimit pra criar `.zim`). Pasta `LocalZIM/`, porta dev 1440, identifier `com.localzim.app`, associação `.zim` (11º app do catálogo do Hub desde o v0.4.0).
 
-- **Parser ZIM em Rust puro** (`src-tauri/src/zim.rs`, ~600 linhas + testes com ZIM sintético): header, dirents, busca binária por URL/título, clusters zstd/LZMA2-XZ/raw (cache LRU de 12), redirects, metadados M, esquemas de namespace antigo (A/I/M) e novo (C/M/W/X), índice `X/listing/titleOrdered/v1`. **Sem libzim/C++** — zero dor no CI Windows.
-- **Protocolo `zim://`** (no Windows `http://zim.localhost/`) serve `/<id>/<N>/<url>` direto ao WebView2; links relativos funcionam de graça, redirect do ZIM vira 302. Em toda página HTML o Rust injeta `bridge.js` (postMessage): título/URL carregada → app, links externos → navegador do sistema, e recebe comandos de zoom e modo escuro (filtro invert).
-- **Front**: biblioteca (recentes em localStorage com ícone/descrição do próprio ZIM) + leitor num iframe com voltar/avançar (histórico do webview), página principal, artigo aleatório, busca por título com sugestões (prefixo + variantes de capitalização), zoom por livro, tema claro/escuro. Single-instance + arquivo por argumento de CLI.
-- **Limitações v0.1 anotadas no README**: sem busca full-text (índice Xapian não é lido), vídeo sem seek (sem suporte a Range), histórico compartilhado ao alternar livros abertos.
-- Pendências: repo GitHub `Anon5T4R/LocalZIM` + release + entrada no catálogo do Hub; teste com um ZIM real grande na máquina do João.
+- **Parser ZIM em Rust puro** (`src-tauri/src/zim.rs` + testes com ZIM sintético byte a byte): header, dirents, busca binária por URL/título, clusters zstd/LZMA2-XZ/raw (cache LRU 12; raw lê só a fatia do blob — vídeo grande não entra na RAM), redirects, metadados M, esquemas de namespace antigo (A/I/M) e novo (C/M/W/X), índice `X/listing/titleOrdered/v1`. **Sem libzim/C++** — zero dor no CI Windows.
+- **Protocolo `zim://`** (no Windows `http://zim.localhost/`) serve `/<id>/<N>/<url>` direto ao WebView2; links relativos de graça, redirect vira 302, **Range → 206** (vídeo/áudio com seek). Em todo HTML o Rust injeta `bridge.js` (postMessage): título/URL → app, links externos → navegador do sistema, comandos de zoom/modo escuro/localizar/atalhos.
+- **Busca full-text (v0.2.0, `search.rs`)**: o Xapian embutido no ZIM não é lido (C++); o app constrói índice **tantivy** próprio 1x em background (progresso/cancelamento via evento `fulltext`), guardado em `app_data/fulltext/<uuid do ZIM>`; BM25 com boost de título, tokenização lowercase+sem acentos, corpo NÃO armazenado (trecho re-extraído do ZIM na busca). UI: item "buscar no texto completo" no dropdown + painel lateral com trechos destacados.
+- **Front**: biblioteca (recentes em localStorage com ícone/descrição do próprio ZIM) + leitor em iframe: voltar/avançar, página principal, artigo aleatório, sugestões por título (prefixo + variantes de capitalização), zoom por livro, localizar na página (Ctrl+F via `window.find` na ponte), tema claro/escuro dentro do artigo, atalhos que atravessam o iframe. Single-instance + arquivo por argumento de CLI.
+- **Limitações anotadas no README**: índice full-text é opt-in e ocupa disco; histórico compartilhado ao alternar livros abertos.
+- Pendência: teste com um ZIM real grande na máquina do João (inclusive indexação full-text).
 
 ---
 
