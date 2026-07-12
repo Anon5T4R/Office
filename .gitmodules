@@ -1,3 +1,30 @@
-[submodule "code"]
-	path = code
-	url = https://github.com/Anon5T4R/code.git
+[submodule "LocalOffice"]
+	path = LocalOffice
+	url = https://github.com/Anon5T4R/LocalOffice.git
+[submodule "LocalSheets"]
+	path = LocalSheets
+	url = https://github.com/Anon5T4R/LocalSheets.git
+[submodule "LocalSlides"]
+	path = LocalSlides
+	url = https://github.com/Anon5T4R/LocalSlides.git
+[submodule "LocalPDF"]
+	path = LocalPDF
+	url = https://github.com/Anon5T4R/LocalPDF.git
+[submodule "LocalData"]
+	path = LocalData
+	url = https://github.com/Anon5T4R/LocalData.git
+[submodule "LocalCode"]
+	path = LocalCode
+	url = https://github.com/Anon5T4R/LocalCode.git
+[submodule "LocalAI"]
+	path = LocalAI
+	url = https://github.com/Anon5T4R/LocalAI.git
+[submodule "LocalMind"]
+	path = LocalMind
+	url = https://github.com/Anon5T4R/LocalMind.git
+[submodule "TaylorChat"]
+	path = TaylorChat
+	url = https://github.com/Anon5T4R/TaylorChat.git
+[submodule "TaylorHub"]
+	path = TaylorHub
+	url = https://github.com/Anon5T4R/TaylorHub.git
