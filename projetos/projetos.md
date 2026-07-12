@@ -4,7 +4,7 @@
 >
 > Workspace (desde 2026-07-12): `C:\Users\Hades\OneDrive\Desktop\Dev\Local` (repo `Anon5T4R/Office`) — os 10 apps são **submodules** registrados no `.gitmodules`, cada um com repo próprio em `github.com/Anon5T4R/<App>`.
 >
-> Portas de dev do Vite (únicas por app desde 2026-07-12): LocalOffice 1420 · LocalCode 1422 · TaylorHub 1425 · TaylorChat 1427 · LocalData 1430 · LocalPDF 1432 · LocalSheets 1434 · LocalSlides 1436 · LocalAI 1438 (HMR = porta+1).
+> Portas de dev do Vite (únicas por app desde 2026-07-12): LocalOffice 1420 · LocalCode 1422 · TaylorHub 1425 · TaylorChat 1427 · LocalData 1430 · LocalPDF 1432 · LocalSheets 1434 · LocalSlides 1436 · LocalAI 1438 · LocalZIM 1440 (HMR = porta+1).
 
 ---
 
@@ -191,6 +191,16 @@ As perguntas em aberto abaixo foram **fechadas no [plano.md](plano.md)**: transp
 - **Arquivos/mídia:** compressão (**zstd**) antes do envio, transferência retomável em chunks.
 - **Histórico:** local em SQLite (cifrado em repouso, se viável).
 - **Sem data.** Registrado aqui só pra não perder a intenção.
+
+### 4.5 LocalZIM — leitor de bibliotecas ZIM / clone do Kiwix — **IMPLEMENTADO (2026-07-12, v0.1.0 local)**
+
+Lê arquivos `.zim` (Wikipédia offline, Stack Overflow, Gutenberg — library.kiwix.org). Pasta `LocalZIM/`, porta dev 1440, identifier `com.localzim.app`, associação `.zim`, MIT.
+
+- **Parser ZIM em Rust puro** (`src-tauri/src/zim.rs`, ~600 linhas + testes com ZIM sintético): header, dirents, busca binária por URL/título, clusters zstd/LZMA2-XZ/raw (cache LRU de 12), redirects, metadados M, esquemas de namespace antigo (A/I/M) e novo (C/M/W/X), índice `X/listing/titleOrdered/v1`. **Sem libzim/C++** — zero dor no CI Windows.
+- **Protocolo `zim://`** (no Windows `http://zim.localhost/`) serve `/<id>/<N>/<url>` direto ao WebView2; links relativos funcionam de graça, redirect do ZIM vira 302. Em toda página HTML o Rust injeta `bridge.js` (postMessage): título/URL carregada → app, links externos → navegador do sistema, e recebe comandos de zoom e modo escuro (filtro invert).
+- **Front**: biblioteca (recentes em localStorage com ícone/descrição do próprio ZIM) + leitor num iframe com voltar/avançar (histórico do webview), página principal, artigo aleatório, busca por título com sugestões (prefixo + variantes de capitalização), zoom por livro, tema claro/escuro. Single-instance + arquivo por argumento de CLI.
+- **Limitações v0.1 anotadas no README**: sem busca full-text (índice Xapian não é lido), vídeo sem seek (sem suporte a Range), histórico compartilhado ao alternar livros abertos.
+- Pendências: repo GitHub `Anon5T4R/LocalZIM` + release + entrada no catálogo do Hub; teste com um ZIM real grande na máquina do João.
 
 ---
 

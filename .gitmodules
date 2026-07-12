@@ -28,3 +28,6 @@
 [submodule "TaylorHub"]
 	path = TaylorHub
 	url = https://github.com/Anon5T4R/TaylorHub.git
+[submodule "LocalZIM"]
+	path = LocalZIM
+	url = https://github.com/Anon5T4R/LocalZIM.git
