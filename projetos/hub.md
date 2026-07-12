@@ -12,7 +12,7 @@ Diferenças do plano original (decididas na implementação):
 - **Catálogo ganhou o 7º app (2026-07-06): TaylorAI Studio** (`Anon5T4R/taylorai-studio`, Tauri, "LM Studio" local, exe `TaylorAI Studio.exe`, sem extensões associadas) — 1 entrada JSON, comprovando a extensibilidade prometida.
 - Detecção de instalado no Windows: **varre TODOS os itens de Uninstall casando por DisplayName** (Tauri NSIS e electron-builder usam chaves diferentes; casar pelo nome é robusto pros dois).
 - Catálogo por ora **embutido** em `src/catalog.ts` (fase 3 = mover pra `catalog.json` remoto com cache).
-- Porta dev do Vite: **1425** (writer/sheets/slides usam 1420).
+- Porta dev do Vite: **1425**. (Desde 2026-07-12 cada app tem porta única — ver mapa no topo do projetos.md.)
 - TaylorMind: assets da release v0.1.1 se chamam `0.1.0` → glob `TaylorMind.Setup.*.exe` resolve, mas arrumar na próxima release do TaylorMind.
 
 ## O que o Hub é (e não é)

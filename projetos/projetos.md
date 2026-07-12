@@ -1,8 +1,10 @@
-# Suíte Taylor — Arquitetura e Planejamento
+# Suíte Local — Arquitetura e Planejamento
 
-> **Documento mestre da suíte.** Retrato em **2026-07-06** — versões, portas e pendências mudam rápido; confira o repo de cada app antes de assumir um detalhe como atual.
+> **Documento mestre da suíte.** Retrato em **2026-07-06** — versões, portas e pendências mudam rápido; confira o repo de cada app antes de assumir um detalhe como atual. (Título original: "Suíte Taylor"; a marca guarda-chuva virou **Local** em 2026-07.)
 >
-> Workspace: `C:\Users\joaof\OneDrive\Desktop\Office` (repo `Anon5T4R/Office`, com writer/sheets/slides/code como gitlinks soltos — não estão no `.gitmodules`).
+> Workspace (desde 2026-07-12): `C:\Users\Hades\OneDrive\Desktop\Dev\Local` (repo `Anon5T4R/Office`) — os 10 apps são **submodules** registrados no `.gitmodules`, cada um com repo próprio em `github.com/Anon5T4R/<App>`.
+>
+> Portas de dev do Vite (únicas por app desde 2026-07-12): LocalOffice 1420 · LocalCode 1422 · TaylorHub 1425 · TaylorChat 1427 · LocalData 1430 · LocalPDF 1432 · LocalSheets 1434 · LocalSlides 1436 · LocalAI 1438 (HMR = porta+1).
 
 ---
 
