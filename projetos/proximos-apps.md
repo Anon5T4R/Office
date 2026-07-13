@@ -117,9 +117,14 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 4. LocalImage — visualizador, anotador e captura de tela
+## 4. LocalImage — visualizador, anotador e captura de tela — **IMPLEMENTADO (2026-07-13, v0.1.0)**
 
-**O gap:** ver imagem rápido, anotar screenshot (seta/tarja/texto) e converter/redimensionar sem abrir editor pesado. Fecha o combo ShareX/Flameshot local.
+**Estado:** repo https://github.com/Anon5T4R/LocalImage (MIT), pasta `LocalImage/` (submodule), porta dev **1448**, identifier `com.localimage.app`, sem sidecar e sem IA. No catálogo do TaylorHub (Mídia) desde o commit v0.8.0 — **com `extensions: []` de propósito** (a decisão "não roubar o visualizador do SO" virou regra no instalador também: o NSIS não registra associação nenhuma; "abrir com" funciona por argumento + single-instance). **Fases v0.1–v0.3 + o lote da v0.4 saíram juntos na v0.1.0**: visualizador (pasta com ←/→, tira de miniaturas, zoom por passos com Ctrl+roda, ajustar/100%, pan, fullscreen, girar exibição, lixeira do SO via crate `trash`, painel EXIF), anotador (seta, caixa, realce, tarja, desenho, texto com contorno, **passos numerados** e crop; anotações em coordenadas da imagem original queimadas em resolução nativa; undo/redo; copiar pro clipboard), captura de tela/janela via **xcap** caindo direto no anotador (esconde o app antes, histórico em app_data/captures, **atalho global opt-in** via tauri-plugin-global-shortcut), converter/redimensionar/comprimir (crate `image`; WebP lossy pelo canvas do webview — o crate só faz WebP lossless) e lote PNG/JPG. Decisões:
+- **Privacidade por construção:** todo export re-encoda ⇒ EXIF (GPS/câmera/data) nunca sobrevive; o painel EXIF avisa isso.
+- **Editor carrega a base via Rust em data: URL** (canvas nunca fica "tainted", e TIFF & cia. funcionam); o visualizador usa asset protocol com fallback pro decoder Rust.
+- **Região da captura = capturar a tela + crop no anotador** (sem overlay nativo — robusto em Wayland).
+
+**Pendências (v0.4 do plano):** remoção de fundo (rembg/onnx do Slides) e OCR (tesseract do LocalPDF) ficaram pra próxima versão; teste GUI real na máquina do João (inclusive captura em Wayland e clipboard de imagem no Linux).
 
 **Stack específica:**
 - **Operações de imagem:** crate **`image`** no Rust (decode/resize/convert/compress png-jpg-webp-gif-bmp-tiff) — rápido e sem sidecar. EXIF via `kamadak-exif` (mostrar e **opção de remover ao exportar** — privacidade).
@@ -247,7 +252,7 @@ O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (t
 1. ~~**LocalAgenda**~~ **FEITO (2026-07-13, v0.1.0)** — gap funcional maior; sem risco técnico.
 2. ~~**LocalScribe**~~ **FEITO (2026-07-13, v0.1.0)** — entrega SRT/VTT que o LocalPlayer usa depois.
 3. ~~**LocalMedia**~~ **FEITO (2026-07-13, v0.1.0)** — o preset "WAV 16 kHz" socorre o Scribe, como planejado.
-4. **LocalImage** — porta anotações do LocalPDF + rembg do Slides + OCR; captura de tela fecha o pacote.
+4. ~~**LocalImage**~~ **FEITO (2026-07-13, v0.1.0)** — anotador próprio + captura; rembg/OCR ficaram pra v0.4.
 5. **LocalPlayer** — começa por **spike de embed do libmpv** (fase 0 decide plano A/B); consome as legendas do Scribe.
 6. **LocalDraw** — porte grande do Slides; conectores são a novidade.
 7. **LocalTranslate** — o mais barato (motor pronto no LocalZIM); pode adiantar se precisar de uma vitória rápida.
