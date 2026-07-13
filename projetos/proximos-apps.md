@@ -43,7 +43,7 @@
 - **IA (porta 8104):** linguagem natural → evento (a IA propõe, o código valida em TS e abre o editor pré-preenchido pro usuário confirmar) + resumo da semana. Padrão deckgen do Slides.
 - **Notificação inteligente extra:** resumo do dia (opcional, no horário escolhido) + snooze (5/10/30/60 min) direto no toast in-app.
 
-Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/prioridade/recorrência (rola pro próximo prazo ao concluir), múltiplos calendários coloridos, busca, tema claro/escuro, atalhos (T/setas/m/w/d/a/n), backup export/import da base. **Pendências:** teste GUI real (`tauri dev`) + IA com `.gguf` na máquina do João; edição de ocorrência única (só "pular ocorrência" implementado, exceção via exdate); release v0.1.0 (tag) + release nova do Hub.
+Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/prioridade/recorrência (rola pro próximo prazo ao concluir), múltiplos calendários coloridos, busca, tema claro/escuro, atalhos (T/setas/m/w/d/a/n), backup export/import da base. **Releases publicadas:** LocalAgenda **v0.1.1** (v0.1.0 = 1ª release; v0.1.1 = ícone no padrão da suíte — card de calendário + "Taylor" cursivo) e **TaylorHub v0.6.2** (LocalAgenda no catálogo, categoria Escritório). **Pendências:** teste GUI real (`tauri dev`) + IA com `.gguf` na máquina do João; edição de ocorrência única (só "pular ocorrência" implementado, exceção via exdate).
 
 **O gap:** a suíte não tem PIM. É o "Outlook sem e-mail": calendário + tarefas + lembretes, 100% local.
 
