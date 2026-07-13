@@ -13,8 +13,8 @@
 Suíte de aplicativos desktop **100% offline**, com **IA local** (modelos GGUF via llama.cpp), sob a marca guarda-chuva **"Taylor"** (aparece como easter egg nos ícones). Conta GitHub: **Anon5T4R**.
 
 **Filosofia (João):**
-- Tudo vira **OpenSource na v1**. Nada proprietário; reaproveitar OSS livremente (evitar copyleft incompatível).
-- Monetização: **instalação facilitada** ("ter pronto pra usar") + **modelos GGUF próprios** — nunca o software em si.
+- Tudo vira **OpenSource na v1**. Nada proprietário; reaproveitar OSS livremente — **copyleft (GPL/AGPL) não é problema** (reafirmado 2026-07-13): se o reaproveitamento valer a pena, o app adota a licença. Só lembrar a mão única do §6.4 (copyleft não entra em app MIT sem relicenciar).
+- Monetização: **instalação facilitada** ("ter pronto pra usar") + **personalização/adaptação para empresas com necessidades específicas** + **modelos GGUF próprios** — nunca o software em si.
 - Sync é responsabilidade do usuário (pasta no Syncthing/OneDrive); o app nem sabe que existe.
 
 **Stack padrão (apps da pasta Office):**
@@ -280,5 +280,6 @@ O Writer está **AGPL-3.0-or-later**, o resto (sheets/slides/code/TaylorMind) é
 2. ~~**LocalData** (§4.1)~~ **FEITO (2026-07-07, v0.1.0)** → ~~**LocalPDF** (§4.2)~~ **FEITO (2026-07-10, v0.1.0 — falta release/Hub)** → avaliar **LocalDraw** (§4.3). Pendências dos apps atuais (§2) em paralelo, são refinos.
 3. **Runtime de IA compartilhado** (§6.1) — pós-Hub. RAG comum (§6.2) pode nascer antes, dentro do LocalPDF.
 4. **Taylor Chat P2P** (§4.4) — futuro, sem data.
+5. **Próximos apps (decidido 2026-07-13):** ~~LocalAgenda~~ **FEITO (v0.1.0)** → LocalScribe → LocalMedia → LocalImage → LocalPlayer → LocalDraw → LocalTranslate → LocalKeys — plano detalhado (stack, portas, fases, riscos) em [proximos-apps.md](proximos-apps.md).
 
 E-mail: **fora** (decidido 2026-07-06). Interop: baixa prioridade (§6.3).

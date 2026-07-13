@@ -1,0 +1,245 @@
+# Próximos apps da suíte Local — plano detalhado
+
+> Criado em 2026-07-13 a pedido do João. Complementa o [projetos.md](projetos.md) (documento mestre) — as convenções de suíte (release por tag, sidecar llama.cpp, NSIS+AppImage, catálogo do Hub) valem aqui e não são repetidas em cada app.
+>
+> Ordem de execução definida pelo João: **LocalAgenda → LocalScribe → LocalMedia → LocalImage → LocalPlayer → LocalDraw → LocalTranslate → LocalKeys**.
+> (Na lista original o LocalScribe apareceu em 2º e em 9º — é o mesmo app, tratado uma vez só.)
+
+---
+
+## 0. Convenções comuns (reservas feitas neste plano)
+
+**Stack padrão (igual à suíte):** Tauri 2 + React 19 + Vite + TypeScript no front, Rust no back. IA local (quando houver) = llama.cpp `llama-server` sidecar, só `127.0.0.1`, OpenAI-compat, binário gitignored baixado por `scripts/fetch-llama.{ps1,sh}`. Hardware alvo modesto (default CPU `-ngl 0`, contexto ~4096).
+
+**Regra de independência mantida:** cada app tem repo, Tauri e sidecar próprios; "reaproveitar do X" = portar código manualmente.
+
+| App | Pasta | Repo | Identifier | Porta dev (HMR = +1) | IA llama | Sidecar extra | Associações | Categoria no Hub |
+|---|---|---|---|---|---|---|---|---|
+| LocalAgenda | `agenda/` | `Anon5T4R/LocalAgenda` | `com.localagenda.app` | **1442** | 8104–8124 | — | `ics` | Escritório |
+| LocalScribe | `scribe/` | `Anon5T4R/LocalScribe` | `com.localscribe.app` | **1444** | 8105–8125 | whisper.cpp (**8130–8150**) | — | Inteligência artificial |
+| LocalMedia | `media/` | `Anon5T4R/LocalMedia` | `com.localmedia.app` | **1446** | — | ffmpeg (CLI, sem porta) | — | **Mídia** (categoria nova) |
+| LocalImage | `image/` | `Anon5T4R/LocalImage` | `com.localimage.app` | **1448** | — | — | `png, jpg, jpeg, webp, gif, bmp` (opcional, ver §4) | Mídia |
+| LocalPlayer | `player/` | `Anon5T4R/LocalPlayer` | `com.localplayer.app` | **1450** | — | libmpv (lib, não porta) | `mp4, mkv, webm, avi, mov, mp3, flac` | Mídia |
+| LocalDraw | `draw/` | `Anon5T4R/LocalDraw` | `com.localdraw.app` | **1452** | 8106–8126 | — | `tdraw` | Escritório |
+| LocalTranslate | `translate/` | `Anon5T4R/LocalTranslate` | `com.localtranslate.app` | **1454** | — (candle in-process) | — | — | Inteligência artificial |
+| LocalKeys | `keys/` | `Anon5T4R/LocalKeys` | `com.localkeys.app` | **1456** | — (**sem IA de propósito**) | — | `tkeys` | **Segurança** (categoria nova) |
+
+- Portas dev seguem a sequência existente (última usada: LocalZIM 1440). Tauri não tem fallback de porta — `devUrl` e `vite.config.ts` têm que bater.
+- Faixas de IA seguem o padrão `find_free_port` com preferência (última usada: TaylorChat 8103). Whisper ganhou faixa própria (8130+) pra nunca colidir com os llama-server.
+- Licença: **MIT por padrão, mas copyleft não é problema** (decisão do João 2026-07-13: todo repo público é open source; se reaproveitar código GPL/AGPL valer a pena, o app adota a licença — como o Writer já é AGPL). A regra prática do §6.4 do projetos.md continua: código copyleft não pode ser portado *para* um app MIT sem relicenciar o destino.
+- Cada app entra no catálogo do TaylorHub com 1 entrada (lembrar: release nova do Hub enquanto o catálogo for embutido). Categorias novas propostas: **Mídia** e **Segurança**.
+- CI: `ci.yml` (testes front+Rust a cada push) + `release.yml` (tag `v*` → NSIS Windows + AppImage Linux via tauri-action), como LocalZIM/TaylorHub. Validação sempre pelo Actions, nunca `cargo build` local (OneDrive).
+- Fora deste plano: **LocalFeed** (leitor RSS — João pediu explicação antes de decidir; registrado no fim) e **e-mail** (decidido fora em 2026-07-06).
+
+---
+
+## 1. LocalAgenda — calendário, tarefas e lembretes — **IMPLEMENTADO (2026-07-13, v0.1.0)**
+
+**Estado:** repo https://github.com/Anon5T4R/LocalAgenda (MIT, público), pasta `LocalAgenda/` (submodule; a pasta segue o padrão `LocalX` da suíte, não `agenda/`), porta dev **1442**, identifier `com.localagenda.app`, associação `.ics`. No catálogo do TaylorHub (categoria Escritório) desde o commit do `catalog.ts` — **falta a release nova do Hub** (esperando a 1ª release do LocalAgenda). A v0.1 saiu completa e verificada no front (tsc/vite verdes, 12 testes vitest de recorrência+ICS). Decisões de implementação que fugiram/ajustaram o plano:
+- **Recorrência com `rrule.js` (npm) no front**, não a crate `rrule` do Rust — RFC 5545 idêntico (Google/Outlook), mas evita uma dependência Rust não testável localmente e casa com o padrão da suíte de manter lógica no TS. Usa o truque de espelhar a hora local em UTC (floating time) pra DST/fuso não escorregarem.
+- **ICS no webview** (parse/serialize em TS; Rust só move bytes) — mesma filosofia do "zip sempre no webview".
+- **Lembretes:** o front materializa linhas concretas (`fireAt` epoch-ms, IDs determinísticos `kind:refId:occ:min`) numa tabela `reminders`; um **tick de 30s no Rust** dispara os vencidos (`INSERT OR IGNORE` + flag `fired` ⇒ cada ocorrência notifica no máximo 1×). Sem chrono/rrule/icalendar no Rust — dependências mínimas (só rusqlite+serde+tauri), CI de baixo risco.
+- **Bandeja:** fechar minimiza (padrão, configurável `closeToTray`); "Sair" pela bandeja encerra. **Autostart opcional** via `tauri-plugin-autostart` (opt-in).
+- **IA (porta 8104):** linguagem natural → evento (a IA propõe, o código valida em TS e abre o editor pré-preenchido pro usuário confirmar) + resumo da semana. Padrão deckgen do Slides.
+- **Notificação inteligente extra:** resumo do dia (opcional, no horário escolhido) + snooze (5/10/30/60 min) direto no toast in-app.
+
+Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/prioridade/recorrência (rola pro próximo prazo ao concluir), múltiplos calendários coloridos, busca, tema claro/escuro, atalhos (T/setas/m/w/d/a/n), backup export/import da base. **Pendências:** teste GUI real (`tauri dev`) + IA com `.gguf` na máquina do João; edição de ocorrência única (só "pular ocorrência" implementado, exceção via exdate); release v0.1.0 (tag) + release nova do Hub.
+
+**O gap:** a suíte não tem PIM. É o "Outlook sem e-mail": calendário + tarefas + lembretes, 100% local.
+
+**Stack específica:**
+- **Armazenamento:** rusqlite (bundled), **um DB único em `app_data`** (agenda não é documento — não faz sentido "abrir arquivo agenda"). Schema versionado (`schema_version` como no LocalData). Export/import da base inteira pra backup.
+- **Recorrência:** crate **`rrule`** (RFC 5545 — a mesma semântica do Google Calendar/Outlook). Nunca inventar motor de recorrência próprio.
+- **ICS:** crate **`icalendar`** para export; import de `.ics` (evento único e feed exportado de outro app). Associação `ics` registrada.
+- **Notificações:** `tauri-plugin-notification` (já usado no LocalData). **Bandeja + minimizar pra tray** (como TaylorChat) — lembrete só funciona com o app vivo; opcional `tauri-plugin-autostart` (desligado por padrão, o usuário liga em Configurações).
+
+**Modelo de dados:** `calendars` (cor, nome) → `events` (título, início/fim, all-day, rrule, exdates, lembretes N minutos antes, descrição, local) + `tasks` (título, notas, due date opcional, prioridade, recorrência simples, concluída_em, subtarefas por parent_id). Lembretes = tabela `reminders` materializada pelas próximas ocorrências (job no Rust a cada minuto, tick barato).
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** visão mês + semana + lista ("agenda"); criar/editar/arrastar evento; tarefas em painel lateral com checkbox e due date; lembrete por notificação; tray; tema claro/escuro; atalhos (T = hoje, setas = navegar).
+- **v0.2:** recorrência completa (rrule + exceções "só esta ocorrência"); import/export ICS; múltiplos calendários com cores; busca.
+- **v0.3:** visão dia com grade horária; tarefas recorrentes; "adiar" lembrete (snooze); duração padrão configurável; primeiro dia da semana.
+- **v0.4 (IA, porta 8104):** entrada em linguagem natural — "dentista quinta 15h lembra 1h antes" → JSON `{title, start, end, reminder}` validado em TS antes de criar (mesmo padrão do deckgen do Slides: **a IA propõe, o código valida e aplica via store — undo grátis**). Resumo da semana em texto.
+
+**Reuso da suíte:** view de calendário do LocalData como referência de layout; zustand+immer com undo por snapshot (Slides); padrão de settings do Sheets.
+
+**Riscos:** timezone — regra: **tudo em hora local, sem TZ no MVP** (app local pra uso pessoal; TZ só se um dia houver sync). All-day guardado como data pura pra não escorregar um dia.
+
+---
+
+## 2. LocalScribe — transcrição de áudio offline (whisper.cpp)
+
+**O encaixe:** whisper.cpp é o irmão do llama.cpp — mesmo padrão de sidecar que a suíte já domina (fetch-scripts, CI, porta local).
+
+**Stack específica:**
+- **Motor:** **whisper.cpp `whisper-server`** como sidecar (endpoint `/inference`), porta 8130–8150 com `find_free_port`. Binários baixados por `scripts/fetch-whisper.{ps1,sh}` (release oficial do whisper.cpp: zip Windows x64; Linux compila no CI ou usa build estático). Fallback: se o server não subir, usar `whisper-cli` por arquivo (mesmo binário zip).
+- **Modelos:** ggml (`tiny`, `base`, `small` multilíngues — 75 MB a 466 MB). Mesma UX de modelos da suíte: **usuário aponta a pasta**, nada vai no instalador. Tela de modelos com download direto do Hugging Face (`ggml.bin` oficiais do whisper.cpp) com sha256 conferido — padrão do `translate_manifest.json` do LocalZIM.
+- **Decodificação de áudio:** whisper quer PCM 16 kHz mono. **Rust puro: `symphonia`** (mp3/m4a/ogg/flac/wav) + **`rubato`** (resample). Sem ffmpeg aqui — mantém o app leve e o CI simples.
+- **Gravação de microfone:** crate **`cpal`** → WAV temporário → mesmo pipeline.
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** abrir arquivo de áudio → transcrever com progresso e cancelamento (evento, como o indexador do LocalZIM); resultado com timestamps por segmento; player de áudio embutido (`<audio>` do webview) com **clique no segmento → pula pro tempo**; export TXT e MD; idioma auto/pt/en/es.
+- **v0.2:** gravação de microfone; export **SRT/VTT** (vira legenda — sinergia com LocalPlayer); editor de transcript (corrigir texto mantendo timestamps); fila de arquivos.
+- **v0.3 (IA, porta 8105):** resumo e tópicos via llama-server com **map-reduce portado do Writer/LocalPDF** (`chunkDocument`); "gerar ata de reunião" (template); enviar transcript pro OpenObsidian (salvar `.md` na pasta que o usuário escolher).
+- **Fora de escopo (registrado):** diarização (quem falou) — whisper.cpp não faz bem; tradução da transcrição usa o caminho do LocalTranslate no futuro, não o modo translate do whisper (só vai pra inglês).
+
+**Riscos:** vídeo como entrada (extrair áudio de mp4) exige demux — symphonia lê AAC em mp4, cobre o caso comum; o que não abrir, mensagem honesta apontando o LocalMedia ("extraia o áudio lá").
+
+---
+
+## 3. LocalMedia — conversor e cortador de mídia (ffmpeg)
+
+**O gap:** todo mundo resolve "converter/comprimir/cortar vídeo" com site online — anti-local-first. App utilitário, sem IA.
+
+**Stack específica:**
+- **Motor:** **ffmpeg CLI como sidecar** (BtbN win64-gpl zip no Windows; build estático johnvansickle no Linux), baixado por `scripts/fetch-ffmpeg.{ps1,sh}` no CI e no dev. Sidecar por CLI é a escolha **técnica** (processo isolado, progresso parseável, zero build nativo no CI) — a licença nem entra na conta (copyleft OK); linkar libav* no Rust continua não valendo a pena pela complexidade de build.
+- **Progresso:** `-progress pipe:1` parseado no Rust → evento Tauri → barra por job. Fila de jobs serializada (1 encode por vez; encode paraleliza mal em máquina modesta).
+- **Preview:** `<video>` do webview pros formatos que o WebView2 toca; pros demais, thumbnail extraído via ffmpeg (`-frames:v 1`).
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** converter formato (mp4/mkv/webm/mp3/opus/wav… presets simples "vídeo pra web", "só áudio", "compatível com WhatsApp"); comprimir por qualidade (CRF com slider e estimativa); extrair áudio; fila com progresso e cancelamento; arrastar arquivos pra janela.
+- **v0.2:** **cortar por trecho** com timeline visual (thumbnails) — regra de ouro: quando não muda codec, `-c copy` (corte instantâneo, sem re-encode); juntar clipes (concat demuxer quando os codecs batem); redimensionar/rotacionar.
+- **v0.3:** GIF de trecho (palettegen/paletteuse); remover/escolher faixa de áudio e legenda (mkv); normalizar volume (`loudnorm`); lote (aplicar o mesmo preset em N arquivos).
+- **Fora de escopo:** editor de vídeo com timeline multi-faixa (é outro produto); captura de tela (vai pro LocalImage).
+
+**Riscos:** o binário ffmpeg é ~80–120 MB — vai no instalador (como os LSPs do LocalCode, baixado no workflow). Parsing de stderr do ffmpeg é frágil — usar sempre `-progress` estruturado, nunca regex no log humano.
+
+---
+
+## 4. LocalImage — visualizador, anotador e captura de tela
+
+**O gap:** ver imagem rápido, anotar screenshot (seta/tarja/texto) e converter/redimensionar sem abrir editor pesado. Fecha o combo ShareX/Flameshot local.
+
+**Stack específica:**
+- **Operações de imagem:** crate **`image`** no Rust (decode/resize/convert/compress png-jpg-webp-gif-bmp-tiff) — rápido e sem sidecar. EXIF via `kamadak-exif` (mostrar e **opção de remover ao exportar** — privacidade).
+- **Anotação:** camada de anotações **portada do LocalPDF** (setas, caixas, realce, tarja, texto, desenho à mão, carimbo) sobre canvas 2D; anotações "queimam" no export como lá. Crop com a UX do Slides (pan/zoom estilo Canva).
+- **Captura de tela:** crate **`xcap`** (multiplataforma, Windows/X11/Wayland) — tela cheia, janela, região (overlay de seleção). Atalho global via `tauri-plugin-global-shortcut` (configurável, desligado por padrão pra não brigar com o SO).
+- **Remoção de fundo:** **onnxruntime-web portado do Slides** (mesmo modelo).
+- **OCR:** **tesseract.js portado do LocalPDF** (por/eng, tessdata_fast via fetch-script) — "copiar texto da imagem".
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** visualizador rápido (abrir arquivo → navegar a pasta com setas, zoom Ctrl+roda, ajustar/100%, fullscreen, girar, deletar com confirmação); converter/redimensionar/comprimir um arquivo; associação de extensão **desligada por padrão no Hub** (não roubar o visualizador do SO sem o usuário pedir — decidir na entrada do catálogo).
+- **v0.2:** anotação completa + crop; copiar resultado pro clipboard (`tauri-plugin-clipboard-manager` com imagem); "salvar como" mantendo original.
+- **v0.3:** captura de tela (tela/janela/região) caindo direto no anotador; atalho global opcional; histórico de capturas em pasta configurável.
+- **v0.4:** lote (converter/redimensionar N arquivos); remoção de fundo; OCR; strip de miniaturas da pasta.
+- **Fora de escopo:** edição raster de verdade (camadas, brushes, filtros) — ver nota do Krita no §6.
+
+**Riscos:** Wayland restringe captura (xcap usa portais — testar no CI só compila, captura é teste manual); clipboard de imagem no Linux é historicamente chato — aceitar "salvar em arquivo" como fallback honesto.
+
+---
+
+## 5. LocalPlayer — player de vídeo minimalista (motor pronto)
+
+**Decisão de motor:** **libmpv** (crate `libmpv2`). O mpv é o melhor motor pronto que existe (toca tudo, legendas perfeitas, watch-later) e a filosofia é exatamente essa: **não escrever pipeline de vídeo — usar motor consagrado e fazer só a casca leve**.
+
+**Arquitetura (o ponto técnico crítico do app):**
+- **Embed por janela filha:** no Windows, criar child window nativa (HWND via `raw-window-handle` da janela Tauri) e passar `--wid` pro mpv — o vídeo renderiza nela; os controles ficam no webview por cima (overlay auto-oculto). No Linux/X11 igual; **Wayland não suporta `--wid`** → fallback: render API do mpv (OpenGL callback) ou, plano C, janela do mpv separada controlada pelo app via IPC.
+- **Plano B assumido no plano:** se o embed brigar com o webview (z-order/transparência), a v0.1 sai com **mpv em processo separado + `--input-ipc-server`** (named pipe no Windows / socket no Linux) e o app vira controle remoto bonito. Funcionalidade idêntica, menos elegante. Decidir no spike da fase 0.
+- **Licença:** copyleft OK (decisão 2026-07-13) — usar os **builds GPL completos do mpv** sem cerimônia (mais codecs/features que o build LGPL); se o linking tornar o app GPL, o app sai GPL. Binário/dll via `scripts/fetch-mpv.{ps1,sh}` (builds do mpv pra Windows; no Linux, dependência do sistema ou AppImage com a lib).
+
+**Funcionalidades por fase:**
+- **fase 0 (spike, 1–2 dias):** provar embed `--wid` + overlay webview no Windows. O resultado decide plano A vs B.
+- **v0.1 (MVP):** abrir arquivo/pasta (playlist da pasta); play/pause/seek/volume/velocidade; fullscreen; legendas (carregar `.srt` externo + faixas embutidas — o mpv faz sozinho); **lembrar posição** (`--save-position-on-quit`); atalhos padrão mpv (espaço, setas, `[`/`]`, `s` screenshot); associações mp4/mkv/webm/avi/mov + áudio.
+- **v0.2:** miniatura no hover da barra (thumbfast-like via segundo mpv ou ffmpeg thumbs); áudio/legenda selecionáveis no menu; A-B loop; equalização básica de velocidade de fala (`--af=scaletempo2`).
+- **v0.3 (sinergia):** "gerar legenda com o LocalScribe" — se o Scribe estiver instalado (detecção estilo Hub via registro), botão exporta o áudio e abre lá; a legenda SRT volta pra pasta do vídeo.
+- **Fora de escopo:** biblioteca de mídia/metadata scraping (é outro produto — o app é player, não Jellyfin), streaming de rede, codecs além do que o mpv trouxer.
+
+**Riscos:** este é o app com maior risco técnico da lista (embed nativo × webview). Por isso a fase 0 é um spike com critério de saída explícito, antes de qualquer UI.
+
+---
+
+## 6. LocalDraw — diagramas (porte do Slides) ⚠️ nota sobre o Krita
+
+**Nota honesta sobre "reaproveitar muito do Krita" (pedido do João):** a licença GPL não é o problema (copyleft OK desde 2026-07-13) — o problema é **técnico**: o Krita é C++/Qt, e nada dele roda dentro de Tauri/React/TS. Do Krita reaproveitam-se **UX e conceitos** (docking de painéis, atalhos, presets, autosave incremental). **Se a intenção era pintura raster estilo Krita** (brushes, camadas raster, tablet/pressão), isso é um app diferente e enorme — registrado no fim desta seção como "LocalPaint — a avaliar", fora deste plano. O LocalDraw abaixo segue o §4.3 do projetos.md: **diagramas (Visio/draw.io local)**.
+
+**Atalho a avaliar antes de codar (aberto pela liberação de licenças):** existem dois motores de diagrama open source que RODAM no nosso stack e poderiam substituir o porte do Slides:
+- **Excalidraw (MIT)** — é literalmente um **componente React**: canvas infinito, formas, conectores que seguem elementos, texto, imagem, export PNG/SVG, tudo pronto. Embutir no Tauri + salvar `.excalidraw`/`.tdraw` + IA por cima = MVP em dias, não semanas. Contra: estética "desenhado à mão" (tem modo reto, mas a identidade é outra) e menos controle sobre o modelo de dados.
+- **draw.io/mxGraph (Apache-2.0)** — o mais completo (fluxograma sério, ER, rede), mas é um app monolítico JS antigo; integrar é embutir, não portar — vira "casca do draw.io", com pouco espaço pra IA/identidade da suíte.
+
+**Decisão proposta:** spike de 1 dia com Excalidraw embutido; se a estética e o modelo servirem, o LocalDraw v0.1 nasce dele (fases abaixo viram: v0.1 = embed + `.tdraw` + associação, v0.2 = export/IA); senão, segue o porte do Slides abaixo.
+
+**Origem:** ~70% é **porte do LocalSlides** (canvas posicional, formas SVG, snapping com guias, alinhar/distribuir, grupos, camadas, zustand+immer com undo, export PNG). O que muda:
+
+- **Canvas infinito** em vez de slide 1280×720: viewport com pan (espaço+arrastar) e zoom no cursor; sem conceito de "apresentar".
+- **Conectores** (a feature que justifica o app): linha ligada a **âncoras** das formas (N/S/L/O + centro), que **segue a forma ao mover**; roteamento ortogonal simples (Manhattan com 1–2 dobras) no MVP, curvas depois; setas nas pontas; rótulo de texto no conector.
+- **Formas de fluxograma:** processo, decisão, terminador, dado, BD, documento, nota — SVG paths como as 14+ formas do Slides, mesma infra de estilo de traço.
+- **Formato nativo `.tdraw`** (zip: `doc.json` + `media/`, mesmo desenho do `.tslides`).
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** porte do canvas do Slides (formas, texto TipTap, imagens, snapping, grupos, camadas, undo) + canvas infinito + conectores ortogonais com âncoras + paleta de fluxograma + `.tdraw` + export PNG.
+- **v0.2:** **export SVG** (o canvas já é geometria — mapear elementos pra SVG puro); export PDF (print view como Slides); páginas múltiplas no mesmo arquivo; ink (portar InkEl do Slides).
+- **v0.3:** roteamento de conector desviando de formas; ícones embutidos (pack offline tipo Tabler); modelos prontos (fluxograma, orgstack, rede, ER).
+- **v0.4 (IA, porta 8106):** "gera fluxograma disso" → JSON `{nodes:[{id,type,label}], edges:[{from,to,label}]}` validado + **layout automático em TS** (camadas topológicas simples) → elementos reais via store (mesmo contrato do deckgen: nunca aplicar geometria crua do modelo).
+- **Import/export draw.io (XML) fica registrado como ideia**, sem compromisso (formato documentado, mas grande).
+
+**LocalPaint (a avaliar, fora do plano):** se o João quiser pintura raster, o caminho leve seria canvas 2D/WebGL com brushes simples + camadas raster + pressão de caneta (Pointer Events já dá pressão no WebView2) — escopo próprio, decidir depois do LocalDraw.
+
+---
+
+## 7. LocalTranslate — tradutor offline (extração do LocalZIM)
+
+**Origem:** o motor já existe e está testado — Marian/OPUS-MT no **candle** (CPU, crate `tokenizers`), 4 direções (en↔pt-BR, en↔es, pt↔es pivotando pelo inglês), bundles hospedados na **release `v1` do `Anon5T4R/LocalZIM-models`**. Este app é ~"só" UI + extração do módulo.
+
+**Stack específica:**
+- **Portar do LocalZIM:** `translate.rs` (motor + `legs()`), `translate_manifest.json` (sha256/bytes embutido) e o downloader de bundles. Sem sidecar e sem porta — candle roda **in-process**. Regra da casa: mudou bundle ⇒ regenerar manifest e commitar.
+- Modelos novos = pipeline documentado no LocalZIM-models (`convert.py`, venv transformers+torch) → sobe asset na release → adiciona direção no manifest + `legs()` + UI.
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** duas caixas (origem→destino), detecção simples de idioma (heurística por stopwords, os 3 idiomas), swap, copiar resultado, histórico local (últimas N traduções, SQLite ou JSON), tela de gerenciamento de modelos (baixar/remover por direção, com tamanho).
+- **v0.2:** traduzir **arquivo** `.txt`/`.md` (preservando estrutura de markdown: traduzir só nós de texto — parsear com `pulldown-cmark`, não regex); fila com progresso (documento grande = chunks por parágrafo).
+- **v0.3:** **janela rápida** — atalho global (`tauri-plugin-global-shortcut`, opt-in) abre mini-janela com o clipboard já colado e traduzido; bandeja.
+- **v0.4:** mais idiomas (fr, de — depende de converter os pares OPUS-MT e subir na release); glossário do usuário (termos que não traduz).
+- **Fora de escopo:** DOCX/PDF (usuário converte no Writer/LocalPDF antes); tradução dentro dos outros apps continua sendo de cada app (regra de independência).
+
+**Risco:** baixo — é o app mais barato da lista. Cuidado só com RAM: um par carregado por vez (LRU de 1–2 modelos), descarregar ao minimizar pra bandeja.
+
+---
+
+## 8. LocalKeys — gerenciador de senhas ⚠️ segurança primeiro
+
+**Nota sobre "reaproveitar muito do Bitwarden" (revisada com copyleft liberado):** os clients do Bitwarden são **TypeScript (GPL-3)** — e com GPL OK, **dá pra portar código de verdade**, porque TS roda no nosso front. O LocalKeys sai **GPL-3** e reaproveita do monorepo `bitwarden/clients`:
+- **`libs/importer`** — o maior prêmio: **dezenas de importers prontos** (LastPass, Chrome/Edge, 1Password, KeePass, Dashlane, CSV genérico…) em TS puro, portáveis com ajustes pequenos. Isso transforma o import (normalmente o recurso mais chato de um gerenciador) em trabalho de adaptação.
+- **Gerador de senhas/passphrase** e a lógica de força/política — TS portável.
+- **O desenho** (vault cifrado por master password reforçada por KDF, 4 tipos de item, TOTP embutido, auto-lock, timeout de clipboard).
+
+O que **não** portar: a cripto TS do Bitwarden (é orientada a navegador/sync com servidor — protected key, enc-strings). A cifra do vault fica **no Rust** com crates auditados (abaixo), que é mais forte no nosso modelo (chave nunca no webview). Partes do SDK novo do Bitwarden têm licença comercial própria (Bitwarden License) — **usar só o que for GPL** do repo clients. Regra absoluta mantida: **nenhuma primitiva inventada em casa**.
+
+**Arquitetura de segurança (o coração do app):**
+- **Formato `.tkeys`:** arquivo único = header claro (versão, params do KDF, salt) + **blob cifrado** (JSON do vault). Cifra: **XChaCha20-Poly1305** (`chacha20poly1305` do RustCrypto); KDF: **Argon2id** (`argon2`, já usado no LocalData v0.5.0) com params calibrados (~250–500 ms na máquina alvo). Nada de SQLite claro com colunas cifradas — blob único simplifica o modelo e o rekey.
+- **Chave só em memória**, no Rust (`zeroize` ao trancar); o front nunca vê a master password depois do unlock (manda pro back, recebe "unlocked"). **Auto-lock** por inatividade (configurável, default 5 min) e ao minimizar/suspender.
+- **Clipboard:** copiar senha limpa o clipboard após 30 s (timer no Rust); avisar que histórico de clipboard do Windows deve ficar desligado (link pra config do SO).
+- **Keyring do SO** (crate `keyring`, já usada no LocalCode/TaylorChat): **opcional e opt-in**, só pra "desbloquear com o Windows Hello/sessão" guardando uma chave intermediária — nunca a master password. Default: sempre pedir a master.
+- **Sem IA de propósito** (segredos jamais passam por modelo) e **sem rede alguma** no app (nem update check próprio — quem atualiza é o Hub).
+- **Backup:** cópia automática do `.tkeys` ao abrir (mesmo padrão de retenção do LocalData v0.4.0).
+
+**Modelo de dados (dentro do blob):** itens tipo **login** (usuário, senha, URLs, TOTP secret, notas), **nota segura**, **cartão**, **identidade** (os 4 tipos do Bitwarden); pastas; favoritos; histórico de senhas por item; lixeira com retenção.
+
+**Funcionalidades por fase:**
+- **v0.1 (MVP):** criar/abrir vault; CRUD dos 4 tipos; busca instantânea; **gerador** (comprimento, classes, passphrase estilo diceware com wordlist pt/en embutida); copiar usuário/senha; auto-lock; força da senha (zxcvbn via `zxcvbn` crate) no item e na master.
+- **v0.2:** **TOTP** (`totp-rs`, código com contagem regressiva); **import via porte do `libs/importer` do Bitwarden** — começar por Bitwarden JSON/CSV, Chrome/Edge, LastPass e 1Password (os 4 de onde mais se migra) + **KeePass `.kdbx`** nativo (crate `keepass`, leitura); export JSON claro (com aviso forte) e CSV.
+- **v0.3:** histórico de senhas; lixeira; campos customizados; anexos pequenos (cifrados no blob, limite de tamanho); relatório local de senhas fracas/repetidas.
+- **v0.4 (a avaliar, cada um tem custo/risco):** import do JSON **cifrado** do Bitwarden (formato documentado: PBKDF2/Argon2 + AES-CBC — dá pra decifrar com as mesmas crates); auto-type básico via `enigo` (digitação simulada — explicitamente sem hook de navegador); extensão de navegador **fora do escopo da suíte** por ora (superfície de ataque e manutenção grandes demais).
+- **Fora de escopo permanente:** sync próprio (filosofia: a pasta do `.tkeys` no Syncthing/OneDrive do usuário resolve — e o formato blob-único torna conflito detectável), servidor, compartilhamento.
+
+**Processo:** por ser o app crítico, o `ci.yml` roda também `cargo audit`; testes de vetores conhecidos do Argon2/XChaCha; um doc `SECURITY.md` no repo com o threat model (o que protege: arquivo roubado; o que não protege: máquina comprometida com keylogger).
+
+---
+
+## 9. Registro — LocalFeed (explicado, aguardando decisão)
+
+O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (toda publicação séria expõe um feed), o app baixa os artigos novos e guarda **pra ler offline**, com resumo opcional pela IA local. É o jeito de acompanhar notícias sem algoritmo, sem conta e sem tracker — casa com o cluster de conhecimento (LocalZIM/OpenObsidian). Crates maduras: `feed-rs` (parse) + `readability` (extrair o artigo limpo da página). **Fica fora do plano até o João dizer se quer.**
+
+---
+
+## 10. Ordem, dependências e sinergias
+
+1. ~~**LocalAgenda**~~ **FEITO (2026-07-13, v0.1.0)** — gap funcional maior; sem risco técnico.
+2. **LocalScribe** — sidecar novo (whisper), mas padrão conhecido; entrega SRT que o LocalPlayer usa depois.
+3. **LocalMedia** — utilitário barato; entrega o "extrair áudio" que socorre o Scribe.
+4. **LocalImage** — porta anotações do LocalPDF + rembg do Slides + OCR; captura de tela fecha o pacote.
+5. **LocalPlayer** — começa por **spike de embed do libmpv** (fase 0 decide plano A/B); consome as legendas do Scribe.
+6. **LocalDraw** — porte grande do Slides; conectores são a novidade.
+7. **LocalTranslate** — o mais barato (motor pronto no LocalZIM); pode adiantar se precisar de uma vitória rápida.
+8. **LocalKeys** — por último de propósito: app crítico merece o processo mais calmo (threat model, cargo audit, revisão).
+
+**Transversais que este plano reforça:** o **runtime de IA compartilhado (§6.1 do projetos.md)** fica ainda mais necessário (Agenda/Scribe/Draw somam 3 llama-servers novos); o whisper entra na mesma conversa quando o runtime existir. Cada app novo = 1 entrada no catálogo do Hub + release nova do Hub (até a fase 3 do catálogo remoto sair — este plano é mais um argumento pra ela).

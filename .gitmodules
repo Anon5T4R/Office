@@ -31,3 +31,6 @@
 [submodule "LocalZIM"]
 	path = LocalZIM
 	url = https://github.com/Anon5T4R/LocalZIM.git
+[submodule "LocalAgenda"]
+	path = LocalAgenda
+	url = https://github.com/Anon5T4R/LocalAgenda.git
