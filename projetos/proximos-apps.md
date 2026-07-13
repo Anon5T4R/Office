@@ -67,9 +67,15 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 2. LocalScribe — transcrição de áudio offline (whisper.cpp)
+## 2. LocalScribe — transcrição de áudio offline (whisper.cpp) — **IMPLEMENTADO (2026-07-13, v0.1.0)**
 
-**O encaixe:** whisper.cpp é o irmão do llama.cpp — mesmo padrão de sidecar que a suíte já domina (fetch-scripts, CI, porta local).
+**Estado:** repo https://github.com/Anon5T4R/LocalScribe (MIT), pasta `LocalScribe/` (submodule), porta dev **1444**, identifier `com.localscribe.app`, IA llama na 8105–8125. No catálogo do TaylorHub (Inteligência artificial) desde o commit v0.7.0 do Hub. **As fases v0.1–v0.3 saíram juntas na v0.1.0**: fila com progresso/cancelamento, player sincronizado com waveform clicável, editor de segmentos mantendo timestamps, biblioteca SQLite com busca, export TXT/MD/SRT/VTT, gravação de microfone (cpal) com medidor de nível, tela de modelos (ggml tiny/base/small/medium + .en baixados do HF com SHA-1 conferido do models/README.md do whisper.cpp) e IA local (resumo/ata/tópicos/pergunta com map-reduce). Decisões que fugiram/ajustaram o plano:
+- **`whisper-cli` por arquivo em vez do `whisper-server`**: o CLI dá progresso real (`-pp` no stderr), cancelamento limpo (kill) e JSON estruturado (`-oj`) — três coisas que o server não dá por requisição; o custo (recarregar modelo, ~1-2 s) é irrelevante. A faixa 8130–8150 fica reservada se o server voltar um dia.
+- **O WAV 16 kHz convertido é a fonte do player** (asset protocol, escopo `$APPDATA`): WAV toca em qualquer webview; formato original não precisa tocar. Opt-out em "guardar áudio" (~2 MB/min).
+- Linux do fetch-whisper **compila estático da última release** (os binários prontos do projeto podem exigir glibc mais novo que o runner/usuário); Windows usa o zip `whisper-bin-x64`.
+- Sem associação de extensão (como planejado); entrada por drag-drop/diálogo/microfone.
+
+**Pendências:** teste GUI real (`tauri dev` + modelo real) na máquina do João; diarização segue fora de escopo; tradução via LocalTranslate no futuro.
 
 **Stack específica:**
 - **Motor:** **whisper.cpp `whisper-server`** como sidecar (endpoint `/inference`), porta 8130–8150 com `find_free_port`. Binários baixados por `scripts/fetch-whisper.{ps1,sh}` (release oficial do whisper.cpp: zip Windows x64; Linux compila no CI ou usa build estático). Fallback: se o server não subir, usar `whisper-cli` por arquivo (mesmo binário zip).
@@ -87,9 +93,14 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 3. LocalMedia — conversor e cortador de mídia (ffmpeg)
+## 3. LocalMedia — conversor e cortador de mídia (ffmpeg) — **IMPLEMENTADO (2026-07-13, v0.1.0)**
 
-**O gap:** todo mundo resolve "converter/comprimir/cortar vídeo" com site online — anti-local-first. App utilitário, sem IA.
+**Estado:** repo https://github.com/Anon5T4R/LocalMedia (código MIT; binários ffmpeg GPL embutidos), pasta `LocalMedia/` (submodule), porta dev **1446**, identifier `com.localmedia.app`, sem IA. No catálogo do TaylorHub (categoria nova **Mídia**) desde o commit v0.7.0 do Hub. **As fases v0.1–v0.3 saíram juntas na v0.1.0**: presets (MP4 web, WhatsApp, WebM, re-container MKV, MP3/Opus e **WAV 16 kHz mono pro LocalScribe**), compressão CRF com estimativa (rotulada de grosseira), corte com timeline de miniaturas + preview + "usar posição atual" (`-c copy` por padrão, com aviso do quadro-chave), juntar clipes (concat demuxer com checagem de compatibilidade; incompatível = mensagem honesta mandando converter antes), GIF 2 passes (palettegen/paletteuse), faixas de áudio/legenda sem re-encode (mov_text no mp4), redimensionar/rotacionar, loudnorm EBU R128 e lote com `unique_path`. Decisões de implementação:
+- **Args do ffmpeg montados no front** (`src/lib/presets.ts`, funções puras com 18 testes vitest); o Rust injeta `-progress pipe:1` e faz progresso estruturado (µs→ms do `out_time_ms`), cancelamento por job e cauda do stderr como mensagem de erro.
+- Windows: build GPL do BtbN (link `latest` estável); Linux: estático do johnvansickle (roda em qualquer glibc). ~
+- Thumbnails da timeline e preview via asset protocol (escopo home/mídias; formato que o webview não toca cai nas miniaturas + campos de tempo).
+
+**Pendências:** teste GUI real na máquina do João; editor multi-faixa e captura de tela seguem fora de escopo (captura → LocalImage).
 
 **Stack específica:**
 - **Motor:** **ffmpeg CLI como sidecar** (BtbN win64-gpl zip no Windows; build estático johnvansickle no Linux), baixado por `scripts/fetch-ffmpeg.{ps1,sh}` no CI e no dev. Sidecar por CLI é a escolha **técnica** (processo isolado, progresso parseável, zero build nativo no CI) — a licença nem entra na conta (copyleft OK); linkar libav* no Rust continua não valendo a pena pela complexidade de build.
@@ -234,8 +245,8 @@ O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (t
 ## 10. Ordem, dependências e sinergias
 
 1. ~~**LocalAgenda**~~ **FEITO (2026-07-13, v0.1.0)** — gap funcional maior; sem risco técnico.
-2. **LocalScribe** — sidecar novo (whisper), mas padrão conhecido; entrega SRT que o LocalPlayer usa depois.
-3. **LocalMedia** — utilitário barato; entrega o "extrair áudio" que socorre o Scribe.
+2. ~~**LocalScribe**~~ **FEITO (2026-07-13, v0.1.0)** — entrega SRT/VTT que o LocalPlayer usa depois.
+3. ~~**LocalMedia**~~ **FEITO (2026-07-13, v0.1.0)** — o preset "WAV 16 kHz" socorre o Scribe, como planejado.
 4. **LocalImage** — porta anotações do LocalPDF + rembg do Slides + OCR; captura de tela fecha o pacote.
 5. **LocalPlayer** — começa por **spike de embed do libmpv** (fase 0 decide plano A/B); consome as legendas do Scribe.
 6. **LocalDraw** — porte grande do Slides; conectores são a novidade.

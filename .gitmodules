@@ -34,3 +34,9 @@
 [submodule "LocalAgenda"]
 	path = LocalAgenda
 	url = https://github.com/Anon5T4R/LocalAgenda.git
+[submodule "LocalScribe"]
+	path = LocalScribe
+	url = https://github.com/Anon5T4R/LocalScribe.git
+[submodule "LocalMedia"]
+	path = LocalMedia
+	url = https://github.com/Anon5T4R/LocalMedia.git
