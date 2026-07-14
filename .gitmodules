@@ -43,3 +43,6 @@
 [submodule "LocalImage"]
 	path = LocalImage
 	url = https://github.com/Anon5T4R/LocalImage.git
+[submodule "LocalPlayer"]
+	path = LocalPlayer
+	url = https://github.com/Anon5T4R/LocalPlayer.git
