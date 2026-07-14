@@ -144,9 +144,17 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 5. LocalPlayer — player de vídeo minimalista (motor pronto)
+## 5. LocalPlayer — player de vídeo minimalista (motor pronto) — **IMPLEMENTADO (2026-07-14, v0.1.0)**
 
-**Decisão de motor:** **libmpv** (crate `libmpv2`). O mpv é o melhor motor pronto que existe (toca tudo, legendas perfeitas, watch-later) e a filosofia é exatamente essa: **não escrever pipeline de vídeo — usar motor consagrado e fazer só a casca leve**.
+**Estado:** repo https://github.com/Anon5T4R/LocalPlayer (MIT, público; submodule `LocalPlayer/`), porta dev **1450**, identifier `com.localplayer.app`, associações de mídia (`mp4, mkv, webm, avi, mov, m4v, mpg, mpeg, flv, ts, wmv` + `mp3, flac, m4a, ogg, opus, wav, aac, wma`). No catálogo do TaylorHub (categoria Mídia, id `player`, com extensões associadas — não há conflito, é o único player) — **falta a release nova do Hub**. Front verde (build+34 vitest) e **`cargo check` no Windows confirmou o caminho winapi/embed** (regra Actions-puro dispensada só pra isso, `target/` apagado no fim; o CI Linux não compila o embed). Decisões que ajustaram o plano:
+- **Motor mpv como PROCESSO SEPARADO + JSON IPC** (`--input-ipc-server`), **não** a crate `libmpv2` linkada. Mesma lógica do LocalMedia (ffmpeg CLI) e LocalScribe (whisper-cli): zero build nativo no CI, crash do mpv não derruba o app, e o código segue **MIT** (binário GPL do mpv é só um processo ao lado). O Rust é um "cano burro" (`mpv.rs`): manda `{"command":[...]}` e repassa cada linha de evento pro front (`mpv-event`); quem observa propriedades e interpreta é o TS (`mpvEvents.ts`, testado).
+- **Embed no Windows (Plano A):** child window nativa (winapi, classe "Static", sem WndProc próprio) criada sob o HWND do Tauri e passada pro mpv via `--wid` (`embed.rs`). A UI fica ao redor num **layout de grade** — o embed nunca fica atrás da UI; **modal/popover escondem o embed** (`stage_rect(...,visible=false)`) pra aparecerem por cima, e áudio-puro também esconde (mostra "now playing"). Coordenadas em pixels FÍSICOS (× devicePixelRatio), sincronizadas por `ResizeObserver`.
+- **Plano B assumido como fallback + toggle:** "Vídeo em janela separada" nas Configurações (Windows) e **automático no Linux** — a v0.1 do Linux usa o **mpv do sistema** (`apt install mpv`) em janela própria; embed X11 fica pra depois. Mesma IPC/controles nos dois modos. (A "fase 0" spike não foi validada interativamente aqui — ver pendência.)
+- **Fases v0.1 + boa parte da v0.2 saíram juntas:** playlist da pasta em ordem natural (aleatório, repetir tudo/uma), legendas embutidas/externas (`sub-add`), faixas de áudio, **capítulos** na barra e no menu, **velocidade** com `scaletempo2` (voz inteligível), **loop A-B**, print (`screenshot`), **lembra a posição** (watch-later do mpv), tema claro/escuro/sistema, imersivo com auto-ocultar controles, tela cheia, recentes, e atalhos estilo mpv (Espaço, ← →, J/L, ↑↓, F, M, T, N/P, S, [ ], R, Tab, 0–9).
+
+**Pendências:** **teste GUI real** (`tauri dev` + vídeo) na máquina do João — em especial confirmar z-order/transparência do embed no Windows (e, se brigar, ligar "janela separada"); **release nova do TaylorHub** (catálogo já com a entrada `player`); v0.3 = sinergia "gerar legenda com o LocalScribe" (detecção via registro) ficou pra próxima; miniatura no hover da barra e embed X11 no Linux, idem.
+
+**Decisão de motor (registro original):** **libmpv** (crate `libmpv2`). O mpv é o melhor motor pronto que existe (toca tudo, legendas perfeitas, watch-later) e a filosofia é exatamente essa: **não escrever pipeline de vídeo — usar motor consagrado e fazer só a casca leve**.
 
 **Arquitetura (o ponto técnico crítico do app):**
 - **Embed por janela filha:** no Windows, criar child window nativa (HWND via `raw-window-handle` da janela Tauri) e passar `--wid` pro mpv — o vídeo renderiza nela; os controles ficam no webview por cima (overlay auto-oculto). No Linux/X11 igual; **Wayland não suporta `--wid`** → fallback: render API do mpv (OpenGL callback) ou, plano C, janela do mpv separada controlada pelo app via IPC.
@@ -253,7 +261,7 @@ O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (t
 2. ~~**LocalScribe**~~ **FEITO (2026-07-13, v0.1.0)** — entrega SRT/VTT que o LocalPlayer usa depois.
 3. ~~**LocalMedia**~~ **FEITO (2026-07-13, v0.1.0)** — o preset "WAV 16 kHz" socorre o Scribe, como planejado.
 4. ~~**LocalImage**~~ **FEITO (2026-07-13, v0.1.0)** — anotador próprio + captura; rembg/OCR ficaram pra v0.4.
-5. **LocalPlayer** — começa por **spike de embed do libmpv** (fase 0 decide plano A/B); consome as legendas do Scribe.
+5. ~~**LocalPlayer**~~ **FEITO (2026-07-14, v0.1.0)** — embed no Windows (winapi/`--wid`) com fallback/janela separada; Linux usa mpv do sistema. Consome legendas do Scribe fica pra v0.3.
 6. **LocalDraw** — porte grande do Slides; conectores são a novidade.
 7. **LocalTranslate** — o mais barato (motor pronto no LocalZIM); pode adiantar se precisar de uma vitória rápida.
 8. **LocalKeys** — por último de propósito: app crítico merece o processo mais calmo (threat model, cargo audit, revisão).
