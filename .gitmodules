@@ -46,3 +46,6 @@
 [submodule "LocalPlayer"]
 	path = LocalPlayer
 	url = https://github.com/Anon5T4R/LocalPlayer.git
+[submodule "LocalDraw"]
+	path = LocalDraw
+	url = https://github.com/Anon5T4R/LocalDraw.git

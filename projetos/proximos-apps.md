@@ -178,7 +178,19 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 6. LocalDraw — diagramas (porte do Slides) ⚠️ nota sobre o Krita
+## 6. LocalDraw — diagramas (Excalidraw embutido) — **IMPLEMENTADO (2026-07-14, v0.1.0)**
+
+**Estado:** repo https://github.com/Anon5T4R/LocalDraw (MIT, público; submodule `LocalDraw/`), pasta `LocalDraw/`, porta dev **1452**, identifier `com.localdraw.app`, IA llama na 8106–8126, associação `.tdraw`. Release v0.1.0 (Windows NSIS + Linux AppImage) publicada pelo Actions; CI verde (build+10 vitest+cargo test). **Falta a entrada no catálogo do TaylorHub + release nova do Hub** (categoria Escritório). **A decisão foi Excalidraw (não o porte do Slides)** — o spike valeu: é um componente React MIT com canvas infinito, conectores ancorados que seguem as formas, undo/redo e polimento prontos. Decisões:
+- **Embed offline de verdade (o gotcha pago aqui):** o Excalidraw 0.18 faz **lazy-load das fontes por CDN (esm.sh)** em runtime — inaceitável pra suíte offline. Fix: `window.EXCALIDRAW_ASSET_PATH="/excalidraw-assets/"` no `index.html` (antes do módulo carregar — imports ES são içados) + um plugin Vite inline (`vite.config.ts`) que serve as fontes do pacote em dev (middleware) e as copia pra `dist/excalidraw-assets/fonts` no build (não versionadas). Verificado no navegador: 234 font-faces, Excalifont servida local (200/`font/woff2`), **zero requests externos**. `@excalidraw/excalidraw/index.css` importado empacota o resto.
+- **Formato `.tdraw` = JSON padrão do Excalidraw** (`serializeAsJSON`), não zip+media como o `.tslides`: o Excalidraw já embute imagens inline em `files`, então um `.tdraw` também abre como `.excalidraw`. Rust só move bytes/texto (comandos `read_text_file`/`write_text_file`/`write_file_base64`), abrir por "abrir com" via single-instance.
+- **IA de fluxograma (padrão deckgen do Slides):** a IA devolve `{nodes,edges}` (JSON), o código valida em TS (`diagram.ts`, puro e testado), faz **layout topológico em camadas (Kahn, tolerante a ciclo)** e monta a geometria com `convertToExcalidrawElements` (`diagramBuild.ts`) — nós viram rectangle/diamond/ellipse por tipo, arestas viram setas **vinculadas por id** que seguem as formas. Nunca aplica coordenada crua do modelo.
+- Export PNG (`exportToBlob`) e SVG (`exportToSvg`); tema claro/escuro/sistema; atalhos Ctrl+N/O/S/Shift+S; aviso de alterações não salvas ao fechar.
+
+**Pendências:** teste GUI real (`tauri dev`) + IA com `.gguf` na máquina do João; entrada no catálogo do Hub + release do Hub; v0.2 do plano (export/páginas múltiplas/ink) e v0.3+ (roteamento desviando de formas, ícones, modelos) seguem como evolução. O porte do Slides abaixo fica como **registro histórico** (plano B que não foi necessário).
+
+---
+
+### Plano original (porte do Slides) — mantido como referência
 
 **Nota honesta sobre "reaproveitar muito do Krita" (pedido do João):** a licença GPL não é o problema (copyleft OK desde 2026-07-13) — o problema é **técnico**: o Krita é C++/Qt, e nada dele roda dentro de Tauri/React/TS. Do Krita reaproveitam-se **UX e conceitos** (docking de painéis, atalhos, presets, autosave incremental). **Se a intenção era pintura raster estilo Krita** (brushes, camadas raster, tablet/pressão), isso é um app diferente e enorme — registrado no fim desta seção como "LocalPaint — a avaliar", fora deste plano. O LocalDraw abaixo segue o §4.3 do projetos.md: **diagramas (Visio/draw.io local)**.
 
@@ -268,7 +280,7 @@ O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (t
 3. ~~**LocalMedia**~~ **FEITO (2026-07-13, v0.1.0)** — o preset "WAV 16 kHz" socorre o Scribe, como planejado.
 4. ~~**LocalImage**~~ **FEITO (2026-07-13, v0.1.0)** — anotador próprio + captura; rembg/OCR ficaram pra v0.4.
 5. ~~**LocalPlayer**~~ **FEITO (2026-07-14, v0.1.0)** — embed no Windows (winapi/`--wid`) com fallback/janela separada; Linux usa mpv do sistema. Consome legendas do Scribe fica pra v0.3.
-6. **LocalDraw** — porte grande do Slides; conectores são a novidade.
+6. ~~**LocalDraw**~~ **FEITO (2026-07-14, v0.1.0)** — foi de **Excalidraw embutido** (não o porte do Slides); conectores ancorados + IA de fluxograma. Falta catálogo/Hub.
 7. **LocalTranslate** — o mais barato (motor pronto no LocalZIM); pode adiantar se precisar de uma vitória rápida.
 8. **LocalKeys** — por último de propósito: app crítico merece o processo mais calmo (threat model, cargo audit, revisão).
 

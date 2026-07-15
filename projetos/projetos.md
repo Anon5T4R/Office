@@ -280,6 +280,6 @@ O Writer está **AGPL-3.0-or-later**, o resto (sheets/slides/code/TaylorMind) é
 2. ~~**LocalData** (§4.1)~~ **FEITO (2026-07-07, v0.1.0)** → ~~**LocalPDF** (§4.2)~~ **FEITO (2026-07-10, v0.1.0 — falta release/Hub)** → avaliar **LocalDraw** (§4.3). Pendências dos apps atuais (§2) em paralelo, são refinos.
 3. **Runtime de IA compartilhado** (§6.1) — pós-Hub. RAG comum (§6.2) pode nascer antes, dentro do LocalPDF.
 4. **Taylor Chat P2P** (§4.4) — futuro, sem data.
-5. **Próximos apps (decidido 2026-07-13):** ~~LocalAgenda~~ **FEITO (v0.1.0)** → ~~LocalScribe~~ **FEITO (v0.1.0)** → ~~LocalMedia~~ **FEITO (v0.1.0)** → ~~LocalImage~~ **FEITO (v0.1.0)** → ~~LocalPlayer~~ **FEITO (2026-07-14, v0.1.0)** → LocalDraw → LocalTranslate → LocalKeys — plano detalhado (stack, portas, fases, riscos) em [proximos-apps.md](proximos-apps.md).
+5. **Próximos apps (decidido 2026-07-13):** ~~LocalAgenda~~ **FEITO (v0.1.0)** → ~~LocalScribe~~ **FEITO (v0.1.0)** → ~~LocalMedia~~ **FEITO (v0.1.0)** → ~~LocalImage~~ **FEITO (v0.1.0)** → ~~LocalPlayer~~ **FEITO (2026-07-14, v0.1.0)** → ~~LocalDraw~~ **FEITO (2026-07-14, v0.1.0)** → LocalTranslate → LocalKeys — plano detalhado (stack, portas, fases, riscos) em [proximos-apps.md](proximos-apps.md).
 
 E-mail: **fora** (decidido 2026-07-06). Interop: baixa prioridade (§6.3).
