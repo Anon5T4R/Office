@@ -52,3 +52,6 @@
 [submodule "LocalTranslate"]
 	path = LocalTranslate
 	url = https://github.com/Anon5T4R/LocalTranslate.git
+[submodule "LocalKeys"]
+	path = LocalKeys
+	url = https://github.com/Anon5T4R/LocalKeys.git
