@@ -49,3 +49,6 @@
 [submodule "LocalDraw"]
 	path = LocalDraw
 	url = https://github.com/Anon5T4R/LocalDraw.git
+[submodule "LocalTranslate"]
+	path = LocalTranslate
+	url = https://github.com/Anon5T4R/LocalTranslate.git
