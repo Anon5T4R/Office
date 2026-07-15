@@ -244,13 +244,14 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 8. LocalKeys — gerenciador de senhas ⚠️ segurança primeiro — **IMPLEMENTADO (2026-07-15, v0.3.0)**
+## 8. LocalKeys — gerenciador de senhas ⚠️ segurança primeiro — **IMPLEMENTADO (2026-07-15, v0.4.0)**
 
-**Estado:** repo https://github.com/Anon5T4R/LocalKeys (**GPL-3**, público), porta dev **1456**, identifier `com.localkeys.app`, ext `.tkeys`, categoria **Segurança** (nova) no Hub. No catálogo do TaylorHub (release **v0.8.4**) e virou submodule do superprojeto `Local/`. CI verde nas três versões (front build + vitest + cargo test + **cargo audit**); releases NSIS + AppImage publicadas pelo Actions **na 1ª tentativa** as três vezes.
+**Estado:** repo https://github.com/Anon5T4R/LocalKeys (**GPL-3**, público), porta dev **1456**, identifier `com.localkeys.app`, ext `.tkeys`, categoria **Segurança** (nova) no Hub. No catálogo do TaylorHub (release **v0.8.4**) e virou submodule do superprojeto `Local/`. CI verde nas quatro versões (front build + vitest + cargo test + **cargo audit**; a partir da v0.4 há **job `check-windows`** que compila/testa o código só-Windows); releases NSIS + AppImage publicadas pelo Actions **na 1ª tentativa** todas as vezes. **O João rodou o app (v0.3) e confirmou funcionando** — o único furo que ele achou foi o clipboard (resolvido na v0.4).
 
 - **v0.1.0:** cofre `.tkeys` (**XChaCha20-Poly1305 + Argon2id**, header em claro autenticado como AAD, chave só no back-end com `zeroize`, **11 testes de propriedade** — round-trip/senha errada/adulteração blob+header+salt/nonce único), CRUD dos 4 tipos, busca, favoritos, lixeira, **gerador** (senha por classes + passphrase diceware wordlist EFF real de 7776 palavras) + **força zxcvbn**, auto-lock por inatividade e ao ocultar, limpeza de clipboard em 30 s. `SECURITY.md` com threat model.
 - **v0.2.0:** **TOTP** (RFC 6238 via `totp-rs`, código de 6 dígitos com contagem regressiva; **KAT do RFC** nos testes); **importadores** — Bitwarden JSON, CSV (Chrome/Edge, LastPass, 1Password, genérico por mapeamento de colunas) e **KeePass `.kdbx`** (crate `keepass`, leitura); **export** JSON/CSV em claro com aviso forte.
 - **v0.3.0:** **histórico de senhas** por login (empilha a antiga ao trocar, cap 20); **campos personalizados** (texto/oculto) por item; **anexos** pequenos (≤1 MB) guardados base64 dentro do blob cifrado (comandos `read/write_file_b64`, crate `base64`); **relatório** local de senhas fracas (zxcvbn<3) e repetidas; **gravação atômica** (escreve `.tmp` + `fs::rename` por cima — substitui atômico no Win e Unix).
+- **v0.4.0:** **clipboard nativo no Windows** (crate `clipboard-win`) marcando `ExcludeClipboardContentFromMonitorProcessing`/`CanIncludeInClipboardHistory=0`/`CanUploadToCloudClipboard=0` — a senha **não entra mais no Win+V/nuvem** — + limpeza em 30s no Rust (Linux mantém o fallback do WebView); **zeroize** da master password e do JSON do vault em trânsito; **pastas** (organizar/filtrar); diálogos **lembram a última pasta** (localStorage); **import consertado** (Proton Pass/Firefox: email como fallback de usuário, delimitador `;`/tab, **colunas desconhecidas viram campos personalizados** — nada se perde) + aviso pra apagar o CSV.
 
 **Decisões/gotchas que ajustaram o plano:**
 - **Cripto ficou no Rust** (não a TS do Bitwarden, como o plano já previa). Formato `.tkeys` = header de 60 bytes (`TKEYS\0` + versão + params Argon2id + salt 16 + nonce 24) **autenticado como AAD** + blob; salvar recifra com nonce novo reusando a chave de sessão (não re-roda Argon2 nem guarda a senha). Regra "nenhuma primitiva caseira" mantida (só RustCrypto, que já traz os vetores IETF).
@@ -258,10 +259,11 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 - **`keepass` fixado em 0.7** (0.13 é a última, API diferente): `Database::open(&mut Read, DatabaseKey::new().with_password(pw))`, iterar `&db.root` → `NodeRef::Entry(e)`, getters `get_title/username/password/url` + `get("otp")`/`get("Notes")`. Extrai o `secret=`/`key=` de otpauth.
 - **Importadores em TS** (mapeamento de colunas), não o porte pesado do `libs/importer` do Bitwarden — cobre os formatos mais comuns com muito menos código; só o `.kdbx` (binário/cifrado) foi pro Rust.
 
-**Ainda falta / pendências:**
-- **Teste GUI real** na máquina do João (rodar o `.exe`/`.AppImage`) — o que foi validado é compilação + testes no CI, não o app rodando. Pontos mais prováveis de olhar: import de `.kdbx` (não testado com banco real) e os dialogs de arquivo (anexos/import/export).
-- **Endurecimento restante:** limpeza de clipboard movida pro Rust (`arboard`) e auto-lock também no back-end (a gravação atômica já saiu na v0.3).
-- **v0.4 (a avaliar):** import do JSON **cifrado** do Bitwarden, auto-type via `enigo`. **keyring/Windows Hello** (desbloqueio opt-in) ainda não foi feito.
+**Ainda falta / pendências (planejado pra v0.5):**
+- **Auto-type** via `enigo` (mantendo o copiar) — digita usuário/senha direto no campo, sem passar pelo clipboard; precisa de `libxdo-dev` no CI Linux e é instável no Wayland.
+- **Import do JSON cifrado do Bitwarden** (PBKDF2/Argon2 + AES-CBC-HMAC) — hoje só o não-cifrado.
+- **Desbloqueio rápido por keyring** (opt-in, Windows Hello/sessão) guardando uma chave intermediária; default segue pedindo a master.
+- Menores: auto-lock também imposto pelo back-end; atalho global.
 
 **Nota sobre "reaproveitar muito do Bitwarden" (revisada com copyleft liberado):** os clients do Bitwarden são **TypeScript (GPL-3)** — e com GPL OK, **dá pra portar código de verdade**, porque TS roda no nosso front. O LocalKeys sai **GPL-3** e reaproveita do monorepo `bitwarden/clients`:
 - **`libs/importer`** — o maior prêmio: **dezenas de importers prontos** (LastPass, Chrome/Edge, 1Password, KeePass, Dashlane, CSV genérico…) em TS puro, portáveis com ajustes pequenos. Isso transforma o import (normalmente o recurso mais chato de um gerenciador) em trabalho de adaptação.
@@ -306,7 +308,7 @@ O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (t
 5. ~~**LocalPlayer**~~ **FEITO (2026-07-14, v0.1.0)** — embed no Windows (winapi/`--wid`) com fallback/janela separada; Linux usa mpv do sistema. Consome legendas do Scribe fica pra v0.3.
 6. ~~**LocalDraw**~~ **FEITO (2026-07-14, v0.1.0)** — foi de **Excalidraw embutido** (não o porte do Slides); conectores ancorados + IA de fluxograma. Falta catálogo/Hub.
 7. ~~**LocalTranslate**~~ **FEITO (2026-07-15, v0.1.0)** — extração do motor candle do LocalZIM; MVP (2 caixas + detecção + histórico SQLite + gerenciador de modelos). Falta catálogo/Hub + submodule.
-8. ~~**LocalKeys**~~ **FEITO (2026-07-15, v0.3.0)** — cofre `.tkeys` (XChaCha20-Poly1305 + Argon2id, chave só no Rust), gerador, auto-lock, TOTP, importadores (Bitwarden/CSV/KeePass), histórico de senhas, campos personalizados, anexos cifrados, relatório de senhas fracas/repetidas e gravação atômica. `SECURITY.md` + `cargo audit` no CI, como o processo pedia. No Hub (v0.8.4) + submodule. **Falta:** teste GUI do João; endurecimento (clipboard no Rust) e v0.4 (import cifrado do Bitwarden, auto-type, Windows Hello).
+8. ~~**LocalKeys**~~ **FEITO (2026-07-15, v0.4.0)** — cofre `.tkeys` (XChaCha20-Poly1305 + Argon2id, chave só no Rust), gerador, auto-lock, TOTP, importadores (Bitwarden/CSV/KeePass, robustos), histórico, campos personalizados, anexos cifrados, relatório de fracas/repetidas, gravação atômica, **clipboard fora do histórico do Windows**, zeroize e pastas. `SECURITY.md` + `cargo audit` + `check-windows` no CI. **João rodou e aprovou (v0.3).** No Hub (v0.8.4) + submodule. **Falta (v0.5):** auto-type, import cifrado do Bitwarden, desbloqueio por keyring.
 
 **✅ Todos os 8 apps do plano foram implementados.** O que resta agora é evolução (v0.2+ de cada) e as pendências transversais abaixo.
 
