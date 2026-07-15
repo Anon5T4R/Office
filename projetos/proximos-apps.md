@@ -220,9 +220,14 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 7. LocalTranslate — tradutor offline (extração do LocalZIM)
+## 7. LocalTranslate — tradutor offline (extração do LocalZIM) — **IMPLEMENTADO (2026-07-15, v0.1.0)**
 
-**Origem:** o motor já existe e está testado — Marian/OPUS-MT no **candle** (CPU, crate `tokenizers`), 4 direções (en↔pt-BR, en↔es, pt↔es pivotando pelo inglês), bundles hospedados na **release `v1` do `Anon5T4R/LocalZIM-models`**. Este app é ~"só" UI + extração do módulo.
+**Estado:** repo https://github.com/Anon5T4R/LocalTranslate (MIT, público), porta dev **1454**, identifier `com.localtranslate.app`, sem sidecar/porta (candle in-process), sem associação. Releases Windows NSIS (`LocalTranslate_0.1.0_x64-setup.exe`, ~4 MB — sem sidecar, WebView2 do sistema) + Linux AppImage (`LocalTranslate_0.1.0_amd64.AppImage`, ~81 MB) publicadas pelo Actions **na 1ª tentativa** (sem job flaky). CI verde (front build + 10 vitest + 10 cargo test). **Ainda falta:** entrar no catálogo do TaylorHub (categoria Inteligência artificial) + release nova do Hub, e virar submodule do superprojeto `Local/`. Decisões que ajustaram o plano:
+- **Motor portado do LocalZIM** (`translate.rs` + `translate_manifest.json`), mas **sem o cache por artigo/UUID** do ZIM — aqui o texto vem das duas caixas e o histórico fica no SQLite. A API pública virou `translate(direction, text)` (multi-linha, preserva quebras; linha sem letra passa intacta) sobre o mesmo lote-por-perna com pivô pt↔es pelo inglês. Mesma release `v1` de modelos do `LocalZIM-models` (download por perna com sha256 conferido em streaming, evict da RAM após 5 min ociosos).
+- **v0.1 saiu com o MVP do plano:** duas caixas + seletor das 6 direções + swap, **detecção de idioma por heurística** (stopwords distintivas + pistas de acento ã/õ/ç→pt, ñ/¿/¡→es) com sugestão de inverter, copiar, `Ctrl+Enter`, abrir `.txt`/`.md`, **histórico SQLite** (500 últimas, reabre no clique, dedup da última idêntica) e **gerenciador de modelos** (baixa só os pares usados, barra de progresso via evento `download-progress`/`download-done`, remover). Tema claro/escuro/sistema. `lto=true` no release profile (decodificação candle é CPU-bound).
+- **Pendências:** teste GUI real (`tauri dev` + baixar um par de modelo) na máquina do João; v0.2 (traduzir arquivo preservando markdown com `pulldown-cmark`), v0.3 (janela rápida por atalho global + bandeja), v0.4 (fr/de + glossário) seguem como evolução.
+
+**Origem (plano):** o motor já existe e está testado — Marian/OPUS-MT no **candle** (CPU, crate `tokenizers`), 4 direções (en↔pt-BR, en↔es, pt↔es pivotando pelo inglês), bundles hospedados na **release `v1` do `Anon5T4R/LocalZIM-models`**. Este app é ~"só" UI + extração do módulo.
 
 **Stack específica:**
 - **Portar do LocalZIM:** `translate.rs` (motor + `legs()`), `translate_manifest.json` (sha256/bytes embutido) e o downloader de bundles. Sem sidecar e sem porta — candle roda **in-process**. Regra da casa: mudou bundle ⇒ regenerar manifest e commitar.
@@ -239,7 +244,24 @@ Feito: mês/semana/dia/agenda com arrastar-pra-criar, tarefas com subtarefas/pri
 
 ---
 
-## 8. LocalKeys — gerenciador de senhas ⚠️ segurança primeiro
+## 8. LocalKeys — gerenciador de senhas ⚠️ segurança primeiro — **IMPLEMENTADO (2026-07-15, v0.2.0)**
+
+**Estado:** repo https://github.com/Anon5T4R/LocalKeys (**GPL-3**, público), porta dev **1456**, identifier `com.localkeys.app`, ext `.tkeys`, categoria **Segurança** (nova) no Hub. No catálogo do TaylorHub (release **v0.8.4**) e virou submodule do superprojeto `Local/`. CI verde nas duas versões (front build + vitest + cargo test + **cargo audit**); releases NSIS + AppImage publicadas pelo Actions **na 1ª tentativa** as duas vezes.
+
+- **v0.1.0:** cofre `.tkeys` (**XChaCha20-Poly1305 + Argon2id**, header em claro autenticado como AAD, chave só no back-end com `zeroize`, **11 testes de propriedade** — round-trip/senha errada/adulteração blob+header+salt/nonce único), CRUD dos 4 tipos, busca, favoritos, lixeira, **gerador** (senha por classes + passphrase diceware wordlist EFF real de 7776 palavras) + **força zxcvbn**, auto-lock por inatividade e ao ocultar, limpeza de clipboard em 30 s. `SECURITY.md` com threat model.
+- **v0.2.0:** **TOTP** (RFC 6238 via `totp-rs`, código de 6 dígitos com contagem regressiva; **KAT do RFC** nos testes); **importadores** — Bitwarden JSON, CSV (Chrome/Edge, LastPass, 1Password, genérico por mapeamento de colunas) e **KeePass `.kdbx`** (crate `keepass`, leitura); **export** JSON/CSV em claro com aviso forte.
+
+**Decisões/gotchas que ajustaram o plano:**
+- **Cripto ficou no Rust** (não a TS do Bitwarden, como o plano já previa). Formato `.tkeys` = header de 60 bytes (`TKEYS\0` + versão + params Argon2id + salt 16 + nonce 24) **autenticado como AAD** + blob; salvar recifra com nonce novo reusando a chave de sessão (não re-roda Argon2 nem guarda a senha). Regra "nenhuma primitiva caseira" mantida (só RustCrypto, que já traz os vetores IETF).
+- **`totp-rs`: usar `TOTP::new_unchecked`, NÃO `new`** — o `new` exige segredo ≥128 bits, mas segredos reais (Google Authenticator etc.) têm 80 bits (16 chars base32); `new` rejeitaria e quebraria o import. `default-features=false` tira o QR/parser de URL.
+- **`keepass` fixado em 0.7** (0.13 é a última, API diferente): `Database::open(&mut Read, DatabaseKey::new().with_password(pw))`, iterar `&db.root` → `NodeRef::Entry(e)`, getters `get_title/username/password/url` + `get("otp")`/`get("Notes")`. Extrai o `secret=`/`key=` de otpauth.
+- **Importadores em TS** (mapeamento de colunas), não o porte pesado do `libs/importer` do Bitwarden — cobre os formatos mais comuns com muito menos código; só o `.kdbx` (binário/cifrado) foi pro Rust.
+
+**Ainda falta / pendências:**
+- **Teste GUI real** na máquina do João (rodar o `.exe`/`.AppImage`) — o que foi validado é compilação + testes no CI, não o app rodando.
+- **v0.3:** histórico de senhas por item, campos customizados, anexos pequenos cifrados no blob, relatório local de senhas fracas/repetidas.
+- **Endurecimentos:** limpeza de clipboard movida pro Rust (`arboard`), **gravação atômica** (rename em vez de escrever por cima com `.bak`), auto-lock também no back-end.
+- **v0.4 (a avaliar):** import do JSON **cifrado** do Bitwarden, auto-type via `enigo`. **keyring/Windows Hello** (desbloqueio opt-in) ainda não foi feito.
 
 **Nota sobre "reaproveitar muito do Bitwarden" (revisada com copyleft liberado):** os clients do Bitwarden são **TypeScript (GPL-3)** — e com GPL OK, **dá pra portar código de verdade**, porque TS roda no nosso front. O LocalKeys sai **GPL-3** e reaproveita do monorepo `bitwarden/clients`:
 - **`libs/importer`** — o maior prêmio: **dezenas de importers prontos** (LastPass, Chrome/Edge, 1Password, KeePass, Dashlane, CSV genérico…) em TS puro, portáveis com ajustes pequenos. Isso transforma o import (normalmente o recurso mais chato de um gerenciador) em trabalho de adaptação.
@@ -283,7 +305,9 @@ O que seria: **leitor de RSS/Atom** — o usuário assina sites/blogs/portais (t
 4. ~~**LocalImage**~~ **FEITO (2026-07-13, v0.1.0)** — anotador próprio + captura; rembg/OCR ficaram pra v0.4.
 5. ~~**LocalPlayer**~~ **FEITO (2026-07-14, v0.1.0)** — embed no Windows (winapi/`--wid`) com fallback/janela separada; Linux usa mpv do sistema. Consome legendas do Scribe fica pra v0.3.
 6. ~~**LocalDraw**~~ **FEITO (2026-07-14, v0.1.0)** — foi de **Excalidraw embutido** (não o porte do Slides); conectores ancorados + IA de fluxograma. Falta catálogo/Hub.
-7. **LocalTranslate** — o mais barato (motor pronto no LocalZIM); pode adiantar se precisar de uma vitória rápida.
-8. **LocalKeys** — por último de propósito: app crítico merece o processo mais calmo (threat model, cargo audit, revisão).
+7. ~~**LocalTranslate**~~ **FEITO (2026-07-15, v0.1.0)** — extração do motor candle do LocalZIM; MVP (2 caixas + detecção + histórico SQLite + gerenciador de modelos). Falta catálogo/Hub + submodule.
+8. ~~**LocalKeys**~~ **FEITO (2026-07-15, v0.2.0)** — cofre `.tkeys` (XChaCha20-Poly1305 + Argon2id, chave só no Rust), gerador, auto-lock, TOTP e importadores (Bitwarden/CSV/KeePass). `SECURITY.md` + `cargo audit` no CI, como o processo pedia. No Hub (v0.8.4) + submodule. **Falta:** teste GUI do João; v0.3 (histórico/anexos/relatório) e endurecimentos (clipboard no Rust, gravação atômica).
+
+**✅ Todos os 8 apps do plano foram implementados.** O que resta agora é evolução (v0.2+ de cada) e as pendências transversais abaixo.
 
 **Transversais que este plano reforça:** o **runtime de IA compartilhado (§6.1 do projetos.md)** fica ainda mais necessário (Agenda/Scribe/Draw somam 3 llama-servers novos); o whisper entra na mesma conversa quando o runtime existir. Cada app novo = 1 entrada no catálogo do Hub + release nova do Hub (até a fase 3 do catálogo remoto sair — este plano é mais um argumento pra ela).
