@@ -31,6 +31,22 @@ jobs:
           set -u
           fail=0
           total=0
+
+          # Pendências ACEITAS por repo (presas em upstream; revisar a cada release maior).
+          # Justificativas em docs/planos/locks-e-deps.md (dev-notes):
+          # - LocalAI/LocalImage: quick-xml velho via wayland-scanner (proc-macro, SÓ build-time,
+          #   parseia XML estático do próprio crate — sem exposição em runtime) e via xcb do
+          #   xcap 0.4 (pinado de propósito, build-dep).
+          # - LocalCode: rustls-webpki 0.102 preso no octocrab 0.38 (upgrade é breaking; só fala
+          #   com api.github.com). Consertar no próximo minor.
+          # - TaylorChat: webpki 0.102 + hickory-proto presos na cadeia libp2p (RUSTSEC-2026-0118
+          #   nem tem fix publicado). Consertar no próximo minor do p2p.
+          declare -A IGNORE=(
+            [LocalAI]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
+            [LocalImage]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
+            [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098"
+            [TaylorChat]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0118 --ignore RUSTSEC-2026-0119"
+          )
           echo "| Repo | Resultado |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
           repos=$(gh api --paginate users/Anon5T4R/repos --jq '.[].name' | sort)
@@ -40,7 +56,7 @@ jobs:
               continue
             fi
             total=$((total + 1))
-            if out=$(cargo audit -f /tmp/Cargo.lock 2>&1); then
+            if out=$(cargo audit -f /tmp/Cargo.lock ${IGNORE[$r]:-} 2>&1); then
               echo "| $r | ok |" >> "$GITHUB_STEP_SUMMARY"
               echo "$r: ok"
             else
