@@ -1,0 +1,56 @@
+name: Audit semanal de dependências
+
+# Varre o src-tauri/Cargo.lock de TODOS os repos públicos do Anon5T4R e roda
+# cargo audit contra o banco RustSec. A lista de repos é descoberta na hora —
+# app novo com Cargo.lock commitado entra sozinho na varredura.
+#
+# Job vermelho = alguma dep travada num lock tem CVE conhecida (o log diz qual
+# repo/dep/advisory). É o alarme que torna seguro só atualizar deps em release
+# maior — ver docs/planos/locks-e-deps.md no dev-notes.
+on:
+  schedule:
+    - cron: "0 9 * * 1" # toda segunda, 06:00 BRT (09:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Auditar os Cargo.lock de todos os repos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          fail=0
+          total=0
+          echo "| Repo | Resultado |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          repos=$(gh api --paginate users/Anon5T4R/repos --jq '.[].name' | sort)
+          for r in $repos; do
+            # HEAD resolve o branch padrão (main ou master); 404 = repo sem app Tauri
+            if ! curl -fsSL "https://raw.githubusercontent.com/Anon5T4R/$r/HEAD/src-tauri/Cargo.lock" -o /tmp/Cargo.lock 2>/dev/null; then
+              continue
+            fi
+            total=$((total + 1))
+            if out=$(cargo audit -f /tmp/Cargo.lock 2>&1); then
+              echo "| $r | ok |" >> "$GITHUB_STEP_SUMMARY"
+              echo "$r: ok"
+            else
+              fail=1
+              echo "| $r | **VULNERAVEL** — ver log do job |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=cargo audit ($r)::dep vulneravel no Cargo.lock de $r"
+              echo "===== $r ====="
+              echo "$out"
+            fi
+          done
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$total locks auditados." >> "$GITHUB_STEP_SUMMARY"
+          exit $fail
