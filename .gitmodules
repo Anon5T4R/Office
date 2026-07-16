@@ -58,3 +58,6 @@
 [submodule "LocalFiles"]
 	path = LocalFiles
 	url = https://github.com/Anon5T4R/LocalFiles.git
+[submodule "LocalZip"]
+	path = LocalZip
+	url = https://github.com/Anon5T4R/LocalZip.git
