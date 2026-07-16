@@ -73,3 +73,6 @@
 [submodule "LocalAutomation"]
 	path = LocalAutomation
 	url = https://github.com/Anon5T4R/LocalAutomation.git
+[submodule "LocalClip"]
+	path = LocalClip
+	url = https://github.com/Anon5T4R/LocalClip.git
