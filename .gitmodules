@@ -55,3 +55,6 @@
 [submodule "LocalKeys"]
 	path = LocalKeys
 	url = https://github.com/Anon5T4R/LocalKeys.git
+[submodule "LocalFiles"]
+	path = LocalFiles
+	url = https://github.com/Anon5T4R/LocalFiles.git
