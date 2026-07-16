@@ -70,3 +70,6 @@
 [submodule "LocalFeed"]
 	path = LocalFeed
 	url = https://github.com/Anon5T4R/LocalFeed.git
+[submodule "LocalAutomation"]
+	path = LocalAutomation
+	url = https://github.com/Anon5T4R/LocalAutomation.git
