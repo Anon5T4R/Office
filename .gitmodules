@@ -76,3 +76,6 @@
 [submodule "LocalClip"]
 	path = LocalClip
 	url = https://github.com/Anon5T4R/LocalClip.git
+[submodule "LocalMonitor"]
+	path = LocalMonitor
+	url = https://github.com/Anon5T4R/LocalMonitor.git
