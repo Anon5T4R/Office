@@ -67,3 +67,6 @@
 [submodule "LocalCalc"]
 	path = LocalCalc
 	url = https://github.com/Anon5T4R/LocalCalc.git
+[submodule "LocalFeed"]
+	path = LocalFeed
+	url = https://github.com/Anon5T4R/LocalFeed.git
