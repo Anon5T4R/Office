@@ -82,3 +82,6 @@
 [submodule "LocalRecord"]
 	path = LocalRecord
 	url = https://github.com/Anon5T4R/LocalRecord.git
+[submodule "LocalVideo"]
+	path = LocalVideo
+	url = https://github.com/Anon5T4R/LocalVideo.git
