@@ -79,3 +79,6 @@
 [submodule "LocalMonitor"]
 	path = LocalMonitor
 	url = https://github.com/Anon5T4R/LocalMonitor.git
+[submodule "LocalRecord"]
+	path = LocalRecord
+	url = https://github.com/Anon5T4R/LocalRecord.git
