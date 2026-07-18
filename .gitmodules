@@ -85,3 +85,6 @@
 [submodule "LocalVideo"]
 	path = LocalVideo
 	url = https://github.com/Anon5T4R/LocalVideo.git
+[submodule "LocalPaint"]
+	path = LocalPaint
+	url = https://github.com/Anon5T4R/LocalPaint.git
