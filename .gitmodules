@@ -88,3 +88,6 @@
 [submodule "LocalPaint"]
 	path = LocalPaint
 	url = https://github.com/Anon5T4R/LocalPaint.git
+[submodule "LocalConverter"]
+	path = LocalConverter
+	url = https://github.com/Anon5T4R/LocalConverter.git
