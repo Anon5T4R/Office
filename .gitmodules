@@ -91,3 +91,6 @@
 [submodule "LocalConverter"]
 	path = LocalConverter
 	url = https://github.com/Anon5T4R/LocalConverter.git
+[submodule "LocalChessPGN"]
+	path = LocalChessPGN
+	url = https://github.com/Anon5T4R/LocalChessPGN.git
