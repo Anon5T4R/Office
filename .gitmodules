@@ -94,3 +94,6 @@
 [submodule "LocalChessPGN"]
 	path = LocalChessPGN
 	url = https://github.com/Anon5T4R/LocalChessPGN.git
+[submodule "LocalAgendaAndroid"]
+	path = LocalAgendaAndroid
+	url = https://github.com/Anon5T4R/LocalAgendaAndroid.git
