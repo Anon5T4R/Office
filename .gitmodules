@@ -97,3 +97,6 @@
 [submodule "LocalAgendaAndroid"]
 	path = LocalAgendaAndroid
 	url = https://github.com/Anon5T4R/LocalAgendaAndroid.git
+[submodule "LocalBrowser"]
+	path = LocalBrowser
+	url = https://github.com/Anon5T4R/LocalBrowser.git
