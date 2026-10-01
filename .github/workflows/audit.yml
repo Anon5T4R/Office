@@ -38,13 +38,16 @@ jobs:
           #   parseia XML estático do próprio crate — sem exposição em runtime) e via xcb do
           #   xcap 0.4 (pinado de propósito, build-dep).
           # - LocalCode: rustls-webpki 0.102 preso no octocrab 0.38 (upgrade é breaking; só fala
-          #   com api.github.com). Consertar no próximo minor.
-          # - TaylorChat: webpki 0.102 + hickory-proto presos na cadeia libp2p (RUSTSEC-2026-0118
-          #   nem tem fix publicado). Consertar no próximo minor do p2p.
+          #   com api.github.com). Consertar no próximo minor. rustls 0.22 idem: vem da cadeia
+          #   hyper-rustls/tokio-rustls do octocrab — sobe junto no upgrade.
+          # - LocalClip/LocalTranslate: quick-xml 0.39 via wayland-scanner (build-time, mesma
+          #   justificativa de LocalAI/LocalImage).
           declare -A IGNORE=(
             [LocalAI]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
             [LocalImage]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
-            [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098"
+            [LocalClip]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
+            [LocalTranslate]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
+            [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0285"
             [TaylorChat]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0118 --ignore RUSTSEC-2026-0119"
           )
           echo "| Repo | Resultado |" >> "$GITHUB_STEP_SUMMARY"
