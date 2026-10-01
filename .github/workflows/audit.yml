@@ -42,11 +42,14 @@ jobs:
           #   hyper-rustls/tokio-rustls do octocrab — sobe junto no upgrade.
           # - LocalClip/LocalTranslate: quick-xml 0.39 via wayland-scanner (build-time, mesma
           #   justificativa de LocalAI/LocalImage).
+          # - LocalFeed: h2 0.3 preso na cadeia readability 0.3 -> reqwest 0.11 (upgrade de
+          #   reqwest e breaking; consertar no proximo minor do readability/reqwest).
           declare -A IGNORE=(
             [LocalAI]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
             [LocalImage]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
             [LocalClip]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
             [LocalTranslate]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
+            [LocalFeed]="--ignore RUSTSEC-2026-0258"
             [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0285"
             [TaylorChat]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0118 --ignore RUSTSEC-2026-0119"
           )
