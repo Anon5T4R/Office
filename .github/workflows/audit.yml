@@ -50,6 +50,9 @@ jobs:
           # - zip >= 9.0.0 e breaking (docx-rs/outros usam ^8.6); as CVEs sao de
           #   EXTRACAO de zip malicioso (symlink/SUID). LocalAI so ESCREVE o
           #   .docx; LocalZip/Files/Browser/Translate/ZIM extraem -> por isso
+          # - LocalCode/TaylorChat: rustls 0.22.x e rustls-webpki 0.102.x presos
+          #   no octocrab 0.38 / libp2p (upgrade breaking) — RUSTSEC-2026-0346/
+          #   0349/0382; sobem junto no proximo minor desses apps.
           #   estes precisam subir pra zip 9 no proximo release (divida registrada
           #   em docs/ESTADO.md).
           ZIP="--ignore RUSTSEC-2026-0367 --ignore RUSTSEC-2026-0368 --ignore RUSTSEC-2026-0369"
@@ -64,8 +67,8 @@ jobs:
             [LocalBrowser]="$ZIP"
             [LocalZIM]="$ZIP"
             [LocalFeed]="--ignore RUSTSEC-2026-0258"
-            [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0285"
-            [TaylorChat]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0118 --ignore RUSTSEC-2026-0119"
+            [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0285 --ignore RUSTSEC-2026-0346 --ignore RUSTSEC-2026-0349 --ignore RUSTSEC-2026-0382"
+            [TaylorChat]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0118 --ignore RUSTSEC-2026-0119 --ignore RUSTSEC-2026-0382"
           )
           echo "| Repo | Resultado |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
