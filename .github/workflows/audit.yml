@@ -44,11 +44,25 @@ jobs:
           #   justificativa de LocalAI/LocalImage).
           # - LocalFeed: h2 0.3 preso na cadeia readability 0.3 -> reqwest 0.11 (upgrade de
           #   reqwest e breaking; consertar no proximo minor do readability/reqwest).
+          # Leva RustSec out/2026 (2026-10-22): rustls/rustls-webpki/webpki-roots/
+          # anyhow/quinn-proto/etc. FORAM atualizados nos locks de todos os apps.
+          # O que nao tem fix compativel fica tolerado aqui:
+          # - zip >= 9.0.0 e breaking (docx-rs/outros usam ^8.6); as CVEs sao de
+          #   EXTRACAO de zip malicioso (symlink/SUID). LocalAI so ESCREVE o
+          #   .docx; LocalZip/Files/Browser/Translate/ZIM extraem -> por isso
+          #   estes precisam subir pra zip 9 no proximo release (divida registrada
+          #   em docs/ESTADO.md).
+          ZIP="--ignore RUSTSEC-2026-0367 --ignore RUSTSEC-2026-0368 --ignore RUSTSEC-2026-0369"
+          QT="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
           declare -A IGNORE=(
-            [LocalAI]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
-            [LocalImage]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
-            [LocalClip]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
-            [LocalTranslate]="--ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195"
+            [LocalAI]="$QT $ZIP"
+            [LocalImage]="$QT"
+            [LocalClip]="$QT"
+            [LocalTranslate]="$QT $ZIP"
+            [LocalZip]="$ZIP"
+            [LocalFiles]="$ZIP"
+            [LocalBrowser]="$ZIP"
+            [LocalZIM]="$ZIP"
             [LocalFeed]="--ignore RUSTSEC-2026-0258"
             [LocalCode]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0285"
             [TaylorChat]="--ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0049 --ignore RUSTSEC-2026-0099 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0118 --ignore RUSTSEC-2026-0119"
