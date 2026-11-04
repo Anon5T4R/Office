@@ -40,9 +40,6 @@
 [submodule "LocalMedia"]
 	path = LocalMedia
 	url = https://github.com/Anon5T4R/LocalMedia.git
-[submodule "LocalImage"]
-	path = LocalImage
-	url = https://github.com/Anon5T4R/LocalImage.git
 [submodule "LocalPlayer"]
 	path = LocalPlayer
 	url = https://github.com/Anon5T4R/LocalPlayer.git
@@ -73,9 +70,6 @@
 [submodule "LocalAutomation"]
 	path = LocalAutomation
 	url = https://github.com/Anon5T4R/LocalAutomation.git
-[submodule "LocalClip"]
-	path = LocalClip
-	url = https://github.com/Anon5T4R/LocalClip.git
 [submodule "LocalMonitor"]
 	path = LocalMonitor
 	url = https://github.com/Anon5T4R/LocalMonitor.git
